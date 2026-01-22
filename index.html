@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/annyang/2.6.0/annyang.min.js"></script>
+    <script>
+        if(annyang){
+            console.log("annyang");
+            function redirect(site) {
+                window.open(`https://${site}com`, '_blank');
+            };
+            const commands = {"open :site" : redirect};
+            annyang.addCommands(commands);
+            annyang.addCallback('start', () => console.log('Speech recognition started'));
+            annyang.addCallback('error', err => console.error('Speech error:', err));
+            annyang.addCallback('result', phrases => console.log('Heard:', phrases));
+            annyang.start();
+        }
+    </script>
+</head>
+<body>
+    <h1>Voice control Test</h1>
+    <p>Idk man say something</p>
+</body>
+</html>
