@@ -1,0 +1,86 @@
+user 1:
+
+tried to go to gilbert collection
+
+I want to know about coins
+
+Take me to the coin of trajan
+
+next image
+
+scroll down
+
+zoom in to coin image 1
+
+task 2
+
+show me the beatrix potter collection
+
+scroll down
+
+task 3
+
+home
+
+help
+
+preference: original
+
+user 2:
+
+show me coins
+
+show me the coin of trajan
+
+move page down 
+
+return
+
+go to beatrix potter collection
+
+next / next image 
+scroll down
+
+read all that 
+
+go back to the home page 
+
+leave
+
+preference: original
+
+user 3:
+
+show me the roman coin collection
+
+show me the coin of trajan
+
+reads the description
+
+carousel caught attention
+
+likes text size
+
+thinks header is too big
+
+scroll down
+
+spin the wheel
+
+navigate back
+
+show me the beatrix potter collection
+
+navigate right
+
+page down
+
+likes the zig zag images
+
+page down
+
+help / show help
+
+thinks the help page is good
+
+prefers original / thinks a cream one could work
