@@ -84,3 +84,84 @@ help / show help
 thinks the help page is good
 
 prefers original / thinks a cream one could work
+
+tell me about roman coins
+
+Show me items about coin of trajan
+
+Coin of trajan
+
+Next image
+
+Scroll down
+
+Task 2
+
+Beatrix potter
+
+Scroll down
+Scroll down again
+
+Go to meet beatrix potter
+
+Help
+
+Scroll down
+
+Tell me more about that part
+
+Doesnt understand help page
+
+Scroll up again
+
+Show me home
+
+Prefers: original
+
+User 5: 
+
+Go to gilbert collection
+
+Search for coins
+
+Coin of trajan
+
+Read description
+
+Got back to the home page
+
+Go to beatrix potter page
+
+Scroll down a bit
+
+Even more
+
+Go to lake district now
+
+Scroll up
+
+Scroll right
+Prefers: dark blue
+User 6:
+
+gilbert collection
+
+Scroll right x2
+
+Search for roman coins
+
+Coin of trajan
+
+Scroll down
+
+Search for beatrix potter
+
+Scroll down x2
+
+Go home
+
+Help
+
+Scroll down
+
+Prefers default
