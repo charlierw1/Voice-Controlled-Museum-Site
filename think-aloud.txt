@@ -142,6 +142,7 @@ Scroll up
 
 Scroll right
 Prefers: dark blue
+
 User 6:
 
 gilbert collection
@@ -165,3 +166,41 @@ Help
 Scroll down
 
 Prefers default
+
+User 7:
+
+show me the gilbert collection
+
+go back to main menu
+
+open the cast collection
+
+go back to main menu
+
+open the stein collection
+
+go back to the main menu
+
+scroll right
+
+continue scrolling
+
+scroll some more
+
+tell me about roman coins
+
+tell me about the coin of trajan
+
+return to previous page
+
+tell me about the coin of trajan
+
+go back to the main menu
+
+tell me about beatrix potter
+
+please repeat instructions
+
+prefers: purple
+
+
