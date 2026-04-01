@@ -1,0 +1,140 @@
+@import url('https://fonts.googleapis.com/css2?family=Jockey+One&display=swap');
+
+body {
+  margin: 0;
+  min-height: 100vh;
+
+  background: linear-gradient(
+    to bottom,
+    #889FCA 0%,
+    #080a0c 100%
+  );
+
+  background-size: 100% 120%; /* extra height for animation */
+  animation: pulseGradient 4s ease-in-out infinite;
+}
+
+@keyframes pulseGradient {
+  0% {
+    background-position: 0% 100%;
+  }
+  50% {
+    background-position: 0% 10%;
+  }
+  100% {
+    background-position: 0% 100%;
+  }
+}
+
+h1, a, p, h2 {
+    color: white;
+    font-family: "Jockey One", sans-serif;
+    text-decoration: none;
+    text-shadow: 0.1em 0.1em 0.1em #080a0c ;
+}
+
+header {
+    padding: 0 1em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.help {
+    padding: 0.75em 1em;
+    background-color: #920000;
+    border-radius: 1em;
+}
+
+
+.banner {
+    background-color: red;
+    padding: 2em;
+    min-height: 12rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-start;
+}
+
+.banner h2, .banner span {
+    margin: 0;
+}
+
+section {
+    background-color: #767C94;
+    border: black solid 0.1em;
+    border-bottom: none;
+    border-radius: 1em 1em 0 0;
+    margin: 1em 1em 0 1em
+}
+
+.carousel {
+    width: 90%;
+    margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.index-h2 {
+    justify-self: center;
+    margin: 1em;
+}
+
+.image-card {
+  width: 7rem;
+    height: 6em;
+  box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.75em;
+    background: linear-gradient(90deg, #5f6579 0%, #7c8298 50%, #5f6579 100%);
+    background-size: 200% 100%;
+    padding: 0.75em;
+    display: flex;
+    align-items: flex-end;
+}
+
+.image-card.loading {
+    animation: imageCardLoading 1.4s ease-in-out infinite;
+}
+
+.image-card.loading::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.22) 50%, transparent 100%);
+    transform: translateX(-100%);
+    animation: imageCardShimmer 1.4s ease-in-out infinite;
+}
+
+.image-card span {
+    position: relative;
+    z-index: 1;
+}
+
+.image-card-center {
+  width: 8.5rem;
+  height: 7.5rem;
+    z-index: 2;
+}
+
+@keyframes imageCardLoading {
+  0% {
+    background-position: 100% 50%;
+  }
+  50% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes imageCardShimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
