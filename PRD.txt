@@ -1,0 +1,254 @@
+ Product Requirements Document (PRD)
+ Voice Controlled Museum (Prototype)
+1.  Overview
+
+The Voice Controlled Museum is an accessibility-focused web experience that allows users to explore museum collections using voice commands and speech synthesis. The system leverages:
+
+Web Speech API or Annyang for voice recognition
+Web Speech API (or alternative) for text-to-speech synthesis
+Flexible museum content integration (e.g., V&A API, open museum databases)
+
+The interface is designed for hands-free navigation with dual feedback (visual + aural), targeting users with limited dexterity, visual impairments, and anyone seeking accessibility-first exploration.
+
+2.  Goals & Objectives
+Primary Goals
+Enable fully voice-driven navigation
+Provide intuitive discovery of museum objects
+Improve accessibility (e.g., for visually impaired or motor-impaired users)
+
+Secondary Goals
+Provide audio descriptions of artifacts (auto-read with optional toggle)
+Maintain a simple, visually guided UI as secondary support
+Ensure accuracy and comfort for diverse user groups (visual/motor impairments)
+Evaluate through iterative user testing and accessibility compliance
+
+
+3.  Target Users
+Museum visitors (remote or in-gallery)
+Accessibility users (visual/mobility impairments)
+Students & researchers
+Casual explorers
+
+
+4.  Core Features
+4.1 Voice Command System
+Always-on or tap-to-activate microphone
+Command parsing via Web Speech API or Annyang
+Dual feedback loop: visual (UI updates, highlighting) + aural (text-to-speech confirmation)
+Example Commands
+"Show me all ceramics"
+"Describe the next item"
+"Tell me about this artifact"
+"Go to the next image"
+"Read the description"
+4.2 Content Integration (V&A API)
+Fetch via V&A API:
+Object details, images, and metadata
+Searchable artifact database with collection categorization
+Support:
+Dynamic search queries via voice
+Filtering by category or artifact type
+Detailed object information retrieval
+Implementation: JSON parsing from V&A API endpoints with client-side caching for performance
+4.3 UI Pages / Screens
+The application consists of five primary pages:
+1. Home Page - Collections overview
+2. Search Results Page - Voice query results
+3. Artifact Detail Page - Individual object exploration
+4. Collection Page - Curated collection view
+5. Help Page - Voice command reference
+
+ 5. Home Page
+Description
+
+Landing screen with featured collection and quick navigation.
+
+Key Elements
+Featured banner (artifact of the day or highlighted exhibit)
+Featured collection preview
+Horizontal carousel of curated collections
+Text descriptions and collection tags
+Voice Interactions
+"Show me [category name]" (e.g., "Show me all ceramics")
+"Tell me about this artifact"
+"Read the description"
+Aural Feedback: Text-to-speech reads collection titles and descriptions
+
+
+ 6. Search Results Page
+Description
+
+Displays results based on voice query (e.g., “Roman coins”).
+
+Layout
+Grid of items surrounding central microphone
+Items include:
+Image (or placeholder)
+Title (e.g., Coin of Trajan)
+Behavior
+Updates dynamically based on query
+Handles missing images gracefully
+Voice Commands
+“Select [item name]”
+“Tell me about [item]”
+“Show more results”
+
+
+ 7. Artifact Detail Page
+Description
+
+Detailed view of a selected object.
+
+Key Elements
+Title (e.g., Coin of Trajan)
+Long-form description
+Circular image carousel (multi-image navigation)
+Supporting contextual images
+Voice Commands
+“Next image”
+“Previous image”
+“Read description”
+“Go back”
+Behavior
+Auto-read description (optional toggle)
+Highlight active image
+
+
+ 8. Collection Page
+Example: Beatrix Potter Collection
+Description
+
+Displays curated collection overview.
+
+Key Elements
+Banner image
+Horizontal scrollable item previews
+Collection description text
+Related images and artifacts
+Voice Commands
+“Show items”
+“Tell me about this collection”
+“Select [item name]”
+
+
+ 9. Help Page
+Description
+
+Guides users on available voice commands.
+
+Sections
+Search
+“Show me Roman Coins”
+Item Details
+“Tell me more about that pot”
+Collections
+“Show me the Beatrix Potter Collection”
+Navigation
+“Next image / item / video”
+Behavior
+Static instructional content
+Optional voice-triggered walkthrough
+
+
+ 10. Voice Interaction Design
+Input Flow
+User taps mic (or auto-listening)
+Web Speech API/Annyang captures speech
+Command parsed → matched to intent
+UI updates (visual feedback)
+Text-to-speech synthesizes confirmation/response (aural feedback)
+Error Handling
+Speak: "Sorry, I didn't catch that. Please try again."
+Display on-screen suggestions for valid commands
+Offer "Help" or "Show me commands" as fallback voice options
+
+
+ 11. Command Mapping (Examples)
+Intent	Example Phrase	Action
+Search	“Show me Roman coins”	Fetch + display results
+Select	“Tell me about Coin of Trajan”	Open artifact page
+Navigate	“Next image”	Cycle carousel
+Collection	“Show Beatrix Potter”	Open collection page
+
+
+ 12. UI/UX Requirements
+Visual Design
+Large, readable typography (minimum 16pt)
+High contrast backgrounds (WCAG AA or higher)
+Clear focus states and visual indicators
+Accessibility
+Voice-first design (no reliance on touch/mouse)
+Mandatory text-to-speech for all key actions and artifact descriptions
+Keyboard navigation as secondary fallback
+Clear, persistent visual feedback with high-contrast indicators
+Feedback (Dual Layer)
+Visual: Microphone animation when listening, highlight selected items, display transcribed commands
+Aural: Text-to-speech feedback on command recognition, artifact descriptions, navigation confirmations
+Screenreader Compatibility: All interactive elements labeled and ARIA-compliant
+
+
+ 13. Technical Requirements
+Frontend Stack
+Pure HTML5, CSS3, and vanilla JavaScript (no frameworks)
+Web Speech API for speech recognition
+Web Speech API SpeechSynthesis interface for text-to-speech
+No external libraries except polyfills for browser compatibility
+API Integration
+V&A API for artifact data (JSON-based)
+Client-side JSON parsing and caching
+Performance
+Lazy load images
+Handle API latency gracefully
+Optimize speech synthesis for low-latency responses
+Minify CSS/JS for production
+
+
+ 14. Constraints & Assumptions
+Requires microphone access and user permission
+Dependent on browser Web Speech API support (modern browsers)
+Background noise may affect speech recognition accuracy
+Varies by browser implementation (speech synthesis quality)
+Network connectivity required for artifact data retrieval
+
+15. User Testing & Evaluation
+Testing Groups
+Users with visual impairments
+Users with motor impairments (limited dexterity)
+General audiences (baseline usability)
+Older adults and accessibility-focused users
+
+Evaluation Metrics
+Command recognition accuracy (target: >90%)
+User comfort and confidence during navigation
+Time to complete standard tasks (e.g., find an artifact, read its description)
+Error recovery effectiveness
+Aural feedback clarity and comprehension
+Overall accessibility compliance (WCAG 2.1 AAA target)
+
+Testing Approach
+Iterative cycles: design → prototype → test with users → refine
+Collect qualitative feedback (comfort, preference for audio vs. visual)
+Measure quantitative metrics (accuracy, task completion time)
+Session recordings and transcripts for UX analysis
+Accessibility audit with screen readers and keyboard navigation
+
+Success Criteria
+≥80% of target users can complete standard tasks independently
+Command recognition accuracy ≥90%
+WCAG 2.1 AA compliance achieved (AAA when feasible)
+Positive feedback from accessibility-focused test groups
+Smooth voice interaction with minimal errors
+
+
+ 15. Future Enhancements
+Multilingual voice support
+AI-driven recommendations
+Personalised tours
+Voice-guided narratives
+Integration with physical museum kiosks
+
+ 16. Success Metrics
+Voice command success rate
+Task completion time
+User engagement (items viewed/session)
+Accessibility usability feedback
