@@ -6,11 +6,10 @@
     <link rel="stylesheet" href="css/styles.css">
     <title>Voice Controlled Museum</title>
     <script src="javascript/api.js"></script>
+    <script src="javascript/index.js"></script>
+    <script src="javascript/carousel.js"></script>
 </head>
 <body>
-    <script>
-        
-    </script>
     <nav class="temp-nav" aria-label="Temporary site navigation">
         <a href="index.html">Home</a>
         <a href="pages/collection.html">Collection</a>
@@ -24,7 +23,7 @@
     </header>
     <main>
         <a href="#">
-            <div class="banner">
+            <div class="banner loading">
                 <h2>Current Big Collection</h2>
                 <span>Small Collection Description</span>
             </div>
@@ -32,7 +31,7 @@
         <section class="panel">
             <h2 class="index-h2">Current Exhibits</h2>
             <div class="carousel">
-                <svg width="32" height="32" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <svg class="arrow" width="32" height="32" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                     <path d="M14.5 5 7.5 12l7 7" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
                 </svg>
                 <a href="#">
@@ -60,7 +59,7 @@
                         <span>Collection Name</span>
                     </div>
                 </a>
-                <svg width="32" height="32" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <svg class="arrow" width="32" height="32" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                     <path d="m9.5 5 7 7-7 7" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
                 </svg>
             </div>

@@ -127,13 +127,29 @@ header {
 
 
 .banner {
-    background-color: red;
+    background: linear-gradient(90deg, #5f6579 0%, #7c8298 50%, #5f6579 100%);
+    background-size: 200% 100%;
+    position: relative;
+    overflow: hidden;
     padding: 2em;
     min-height: 12rem;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
     align-items: flex-start;
+}
+
+.banner.loading {
+    animation: imageCardLoading 1.4s ease-in-out infinite;
+}
+
+.banner.loading::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.22) 50%, transparent 100%);
+    transform: translateX(-100%);
+    animation: imageCardShimmer 1.4s ease-in-out infinite;
 }
 
 .banner h2, .banner span {
@@ -151,7 +167,18 @@ header {
 }
 
 .item-panel {
-  width:60%
+  width: 60%;
+}
+
+.item-page .item-panel h2 {
+  font-size: clamp(1.35rem, 2.3vw, 3rem);
+  margin: 0 0 0.8rem 0;
+}
+
+.item-page .item-panel p {
+  font-size: clamp(1.02rem, 1.5vw, 2rem);
+  line-height: 1.6;
+  margin: 0;
 }
 
 .item-page header {
@@ -161,8 +188,12 @@ header {
 
 .item-page .circle-carousel {
   position: relative;
-  width: min(34rem, 90vw);
-  height: min(34rem, 90vw);
+  --ring-rotation: 0deg;
+  --counter-rotation: 0deg;
+  --spin-duration: 440ms;
+  --spin-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  width: min(56rem, 98vw);
+  height: min(56rem, 98vw);
   margin: 0 auto;
   transform: translateY(-50%);
   overflow: hidden;
@@ -173,42 +204,103 @@ header {
   flex-shrink: 0;
 }
 
-.item-page .circle-carousel > svg {
+.circle-carousel-track {
   position: absolute;
-  top: 51%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  --orbit-radius: clamp(9.5rem, 20.5vw, 16.5rem);
+  transform: rotate(var(--ring-rotation));
+  transform-origin: 50% 50%;
+  transition: transform var(--spin-duration) var(--spin-ease);
+}
+
+.circle-carousel-track.no-transition {
+  transition: none;
+}
+
+.item-page .circle-carousel.no-transition .circle-item-image,
+.item-page .circle-carousel.no-transition .circle-item figcaption {
+  transition: none;
+}
+
+.item-page .circle-carousel.no-transition .circle-item,
+.item-page .circle-carousel.no-transition .circle-item-main,
+.item-page .circle-carousel.no-transition .circle-item-main .circle-item-image {
+  transition: none;
+}
+
+.item-carousel-arrow {
+  position: absolute;
+  top: 62%;
+  transform: translateY(-50%);
+  width: 2.8rem;
+  height: 2.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(8, 10, 12, 0.42);
   color: white;
-  opacity: 0.85;
+  opacity: 0.9;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 6;
+}
+
+.item-carousel-arrow:hover,
+.item-carousel-arrow:focus-visible {
+  background: rgba(8, 10, 12, 0.64);
+  outline: none;
+}
+
+.item-carousel-arrow-left {
+  left: 1.1rem;
+}
+
+.item-carousel-arrow-right {
+  right: 1.1rem;
 }
 
 .circle-item {
+  --slot-angle: 0deg;
+  --slot-scale: 1;
   position: absolute;
+  top: 50%;
+  left: 50%;
   margin: 0;
-  width: clamp(7rem, 13.5vw, 10.5rem);
+  width: clamp(9.2rem, 16.8vw, 14.2rem);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.35rem;
+  pointer-events: none;
+  will-change: transform;
+  transform: translate(-50%, -50%) rotate(var(--slot-angle)) translateX(var(--orbit-radius)) rotate(calc(-1 * var(--slot-angle))) scale(var(--slot-scale));
+  transition: transform var(--spin-duration) var(--spin-ease);
 }
 
 .circle-item figcaption {
-  font-size: clamp(0.78rem, 1vw, 0.92rem);
+  font-size: clamp(0.92rem, 1.1vw, 1.08rem);
   max-width: 100%;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transform: rotate(var(--counter-rotation));
+  transform-origin: center;
+  transition: transform var(--spin-duration) var(--spin-ease);
+  display: none;
 }
 
 .circle-item-image {
   width: 100%;
-  height: clamp(4rem, 7.6vw, 5.9rem);
+  height: clamp(5.3rem, 9.2vw, 8.2rem);
   border-radius: 0.75em;
   position: relative;
   overflow: hidden;
   background: linear-gradient(90deg, #5f6579 0%, #7c8298 50%, #5f6579 100%);
   background-size: 200% 100%;
+  transform: rotate(var(--counter-rotation));
+  transform-origin: center;
+  transition: transform var(--spin-duration) var(--spin-ease);
 }
 
 .circle-item-image.loading {
@@ -225,43 +317,34 @@ header {
 }
 
 .item-page .orbit-top-left {
-  top: 20%;
-  left: 26%;
-  transform: translate(-50%, -50%);
+  --slot-angle: 234deg;
 }
 
 .item-page .orbit-top-right {
-  top: 20%;
-  left: 74%;
-  transform: translate(-50%, -50%);
+  --slot-angle: 306deg;
 }
 
 .item-page .orbit-left {
-  top: 52%;
-  left: 16%;
-  transform: translate(-50%, -50%);
+  --slot-angle: 162deg;
 }
 
 .item-page .orbit-right {
-  top: 52%;
-  left: 84%;
-  transform: translate(-50%, -50%);
+  --slot-angle: 18deg;
 }
 
 .item-page .circle-item-main {
-  top: 78%;
-  left: 50%;
-  width: clamp(8.2rem, 16.2vw, 12.6rem);
-  transform: translate(-50%, -50%);
+  --slot-angle: 90deg;
+  width: clamp(9.2rem, 16.8vw, 14.2rem);
   z-index: 3;
 }
 
 .item-page .circle-item-main .circle-item-image {
-  height: clamp(4.6rem, 8.8vw, 6.9rem);
+  height: clamp(5.3rem, 9.2vw, 8.2rem);
 }
 
 .item-page .panel {
   margin-top: -6rem;
+  padding: 1.4rem 1.6rem 2rem;
 }
 
 .carousel {
@@ -278,18 +361,38 @@ header {
 }
 
 .image-card {
-  width: clamp(8.5rem, 17vw, 13.5rem);
-    height: clamp(4.75rem, 9.6vw, 7.6rem);
-  box-sizing: border-box;
+    width: clamp(8.5rem, 15vw, 25rem);
+    height: clamp(4.75rem, 9.6vw, 15rem);
+    box-sizing: border-box;
     position: relative;
     overflow: hidden;
     border-radius: 0.75em;
     background: linear-gradient(90deg, #5f6579 0%, #7c8298 50%, #5f6579 100%);
     background-size: 200% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
     padding: 0.75em;
     display: flex;
     align-items: flex-end;
+    outline: solid black 1px;
+    transition: transform 220ms ease, opacity 220ms ease, width 220ms ease, height 220ms ease;
+    will-change: transform, opacity;
 }
+
+  .image-card.carousel-enter-right {
+    transform: translateX(10px) scale(0.985);
+    opacity: 0.9;
+  }
+
+  .image-card.carousel-enter-left {
+    transform: translateX(-10px) scale(0.985);
+    opacity: 0.9;
+  }
+
+  .image-card.carousel-enter-active {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
 
 .image-card.loading {
     animation: imageCardLoading 1.4s ease-in-out infinite;
@@ -310,8 +413,8 @@ header {
 }
 
 .image-card-center {
-  width: clamp(9.75rem, 20vw, 15.25rem);
-  height: clamp(5.5rem, 11.2vw, 8.6rem);
+  width: clamp(9.75rem, 20vw, 30rem);
+  height: clamp(5.5rem, 11.2vw, 20rem);
     z-index: 2;
 }
 
@@ -341,7 +444,18 @@ header {
   justify-content: space-around;
 }
 
+.scroll-lines-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
 .scroll-panel {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   justify-content: space-around;
@@ -349,6 +463,7 @@ header {
 
 .scroll-page .scroll-box .mic {
   position: absolute;
+  z-index: 2;
   left: 50%;
   top: calc(100% - 1.5rem);
   bottom: auto;
