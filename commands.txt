@@ -1,0 +1,34 @@
+show me {object}
+Show me a list of {object}
+Please show me {object}
+Show more about {object}
+Show me information about {object}
+{object name}
+What are {object}
+Museum {object}
+Take me to the {object} page
+See {object}
+Tell me more about {object}
+What's {object}
+Take me to {object}
+Tell me about {object}
+See item {object}
+
+
+Take me back to the menu
+Take me back to the home page
+Go Home
+Previous Page
+Go back to the home page
+Back to home
+Return to home page
+Home
+Go back
+Home Page
+Back to home page
+Back
+menu
+Please send me back to the home page
+
+Display helpful commands
+Help
