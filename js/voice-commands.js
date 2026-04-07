@@ -30,6 +30,9 @@ if (!window.voiceCommandsInitialized) {
     carouselRight: [],
     scrollUp: [],
     scrollDown: [],
+    readCurrentItem: [],
+    openCurrentItemOverlay: [],
+    closeItemOverlay: [],
     search: [],
     openItemOnPage: [],
     objectExplanation: []
@@ -37,6 +40,7 @@ if (!window.voiceCommandsInitialized) {
 
   let clarificationState = null;
   let clarificationTokenCounter = 0;
+  let itemImageOverlayElement = null;
 
   // Build annyang command maps from a list of phrases and one handler.
   function createCommands(phrases, handler) {
@@ -247,6 +251,24 @@ if (!window.voiceCommandsInitialized) {
     );
 
     annyang.addCommands(
+      createCommands(baseCommandGroups.readCurrentItem, () => {
+        readCurrentItemOnPage();
+      })
+    );
+
+    annyang.addCommands(
+      createCommands(baseCommandGroups.openCurrentItemOverlay, () => {
+        openCurrentItemOverlay();
+      })
+    );
+
+    annyang.addCommands(
+      createCommands(baseCommandGroups.closeItemOverlay, () => {
+        closeItemOverlay();
+      })
+    );
+
+    annyang.addCommands(
       createCommands(baseCommandGroups.search, (search) =>
         window.location.replace("/pages/scroll.html?q=" + encodeURIComponent(search || ""))
       )
@@ -273,9 +295,170 @@ if (!window.voiceCommandsInitialized) {
     removeCommands(baseCommandGroups.carouselRight);
     removeCommands(baseCommandGroups.scrollUp);
     removeCommands(baseCommandGroups.scrollDown);
+    removeCommands(baseCommandGroups.readCurrentItem);
+    removeCommands(baseCommandGroups.openCurrentItemOverlay);
+    removeCommands(baseCommandGroups.closeItemOverlay);
     removeCommands(baseCommandGroups.search);
     removeCommands(baseCommandGroups.openItemOnPage);
     removeCommands(baseCommandGroups.objectExplanation);
+  }
+
+  function extractImageUrlFromCssBackground(backgroundValue) {
+    if (typeof backgroundValue !== "string") {
+      return "";
+    }
+
+    const urlMatches = [...backgroundValue.matchAll(/url\((['"]?)(.*?)\1\)/g)];
+    if (!urlMatches.length) {
+      return "";
+    }
+
+    const lastMatch = urlMatches[urlMatches.length - 1];
+    return (lastMatch && lastMatch[2]) ? lastMatch[2] : "";
+  }
+
+  function getCurrentCarouselSlotOnItemPage() {
+    const slots = Array.from(document.querySelectorAll(".item-page .circle-carousel-track .circle-item"));
+    if (!slots.length) {
+      return null;
+    }
+
+    let bestSlot = slots[0];
+    let bestScale = Number.NEGATIVE_INFINITY;
+
+    slots.forEach((slot) => {
+      const rawScale = slot.style.getPropertyValue("--slot-scale") || getComputedStyle(slot).getPropertyValue("--slot-scale");
+      const parsedScale = Number.parseFloat(rawScale || "1");
+      const scale = Number.isFinite(parsedScale) ? parsedScale : 1;
+
+      if (scale > bestScale) {
+        bestScale = scale;
+        bestSlot = slot;
+      }
+    });
+
+    return bestSlot;
+  }
+
+  function buildCurrentItemOverlayData() {
+    const currentSlot = getCurrentCarouselSlotOnItemPage();
+    const imageDiv = currentSlot?.querySelector(".circle-item-image");
+
+    if (!imageDiv) {
+      return null;
+    }
+
+    const backgroundImage = imageDiv.style.backgroundImage || getComputedStyle(imageDiv).backgroundImage;
+    const imageUrl = extractImageUrlFromCssBackground(backgroundImage);
+
+    if (!imageUrl) {
+      return null;
+    }
+
+    const title = document.querySelector(".item-page .item-panel h2")?.textContent?.trim() || "Current item";
+    const description = document.querySelector(".item-page .item-panel p")?.textContent?.trim() || "";
+
+    return {
+      imageUrl,
+      title,
+      description
+    };
+  }
+
+  function closeItemOverlay(shouldSpeak = true) {
+    if (!itemImageOverlayElement) {
+      if (shouldSpeak) {
+        speak("There is no open image overlay.");
+      }
+      return;
+    }
+
+    itemImageOverlayElement.remove();
+    itemImageOverlayElement = null;
+
+    if (shouldSpeak) {
+      speak("Closed image overlay.");
+    }
+  }
+
+  function openCurrentItemOverlay() {
+    const overlayData = buildCurrentItemOverlayData();
+    if (!overlayData) {
+      speak("I could not find the current item image to open.");
+      return;
+    }
+
+    closeItemOverlay(false);
+
+    const overlay = document.createElement("div");
+    overlay.className = "item-image-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-label", "Current item image");
+
+    const panel = document.createElement("div");
+    panel.className = "item-image-overlay-panel";
+
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.className = "item-image-overlay-close";
+    closeButton.textContent = "Close";
+    closeButton.addEventListener("click", () => closeItemOverlay(false));
+
+    const image = document.createElement("img");
+    image.className = "item-image-overlay-image";
+    image.src = overlayData.imageUrl;
+    image.alt = overlayData.title;
+
+    panel.append(closeButton, image);
+    overlay.appendChild(panel);
+
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) {
+        closeItemOverlay(false);
+      }
+    });
+
+    document.body.appendChild(overlay);
+    itemImageOverlayElement = overlay;
+    speak(`Opened image for ${overlayData.title}`);
+  }
+
+  function updateItemOverlayIfOpen() {
+    if (!itemImageOverlayElement) {
+      return;
+    }
+
+    const overlayData = buildCurrentItemOverlayData();
+    if (!overlayData) {
+      return;
+    }
+
+    const image = itemImageOverlayElement.querySelector(".item-image-overlay-image");
+    if (image) {
+      image.src = overlayData.imageUrl;
+      image.alt = overlayData.title;
+    }
+  }
+
+  function readCurrentItemOnPage() {
+    const itemPanel = document.querySelector(".item-panel");
+    const itemTitle = itemPanel?.querySelector("h2")?.textContent?.trim();
+    const itemDescription = itemPanel?.querySelector("p")?.textContent?.trim();
+
+    if (itemTitle && itemDescription) {
+      speak(`Title: ${itemTitle}. Description: ${itemDescription}`);
+      return;
+    }
+
+    const bannerTitle = document.querySelector(".banner h2")?.textContent?.trim();
+    const bannerDescription = document.querySelector(".banner span")?.textContent?.trim();
+    if (bannerTitle && bannerDescription) {
+      speak(`Title: ${bannerTitle}. Description: ${bannerDescription}`);
+      return;
+    }
+
+    speak("I could not find an item to read on this page.");
   }
 
   function buildItemLinkCandidates() {
@@ -498,6 +681,8 @@ if (!window.voiceCommandsInitialized) {
 
     if (itemArrow && !itemArrow.disabled) {
       if (triggerClick(itemArrow)) {
+        // Update overlay image if it's open, after carousel animation
+        setTimeout(updateItemOverlayIfOpen, 360);
         return;
       }
     }
@@ -521,6 +706,10 @@ if (!window.voiceCommandsInitialized) {
   function cancelCurrentAction() {
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
+    }
+
+    if (itemImageOverlayElement) {
+      closeItemOverlay(false);
     }
 
     if (clarificationState) {
@@ -752,6 +941,21 @@ if (!window.voiceCommandsInitialized) {
       ["directCommands", "pageCommands", "scrollDown"]
     );
 
+    const readCurrentItemPhrases = await getCommandsFromJson(
+      "/commands.json",
+      ["directCommands", "pageCommands", "readCurrentItem"]
+    );
+
+    const openCurrentItemOverlayPhrases = await getCommandsFromJson(
+      "/commands.json",
+      ["directCommands", "pageCommands", "openCurrentItemOverlay"]
+    );
+
+    const closeItemOverlayPhrases = await getCommandsFromJson(
+      "/commands.json",
+      ["directCommands", "pageCommands", "closeItemOverlay"]
+    );
+
     const searchPhrases = await getCommandsFromJson(
       "/commands.json",
       ["parameterizedCommands", "navigation", "search"]
@@ -775,6 +979,9 @@ if (!window.voiceCommandsInitialized) {
       carouselRight: carouselRightPhrases,
       scrollUp: scrollUpPhrases,
       scrollDown: scrollDownPhrases,
+      readCurrentItem: readCurrentItemPhrases,
+      openCurrentItemOverlay: openCurrentItemOverlayPhrases,
+      closeItemOverlay: closeItemOverlayPhrases,
       search: searchPhrases,
       openItemOnPage: openItemOnPagePhrases,
       objectExplanation: objectExplanationPhrases

@@ -43,7 +43,8 @@
         "move carousel right",
         "go right",
         "next item",
-        "right"
+        "right",
+        "next"
       ],
       "scrollUp": [
         "scroll up",
@@ -56,6 +57,36 @@
         "move down",
         "page down",
         "go down"
+      ],
+      "readCurrentItem": [
+        "read current item",
+        "read this item",
+        "read this page",
+        "read this",
+        "read item",
+        "tell me this item",
+        "describe this item",
+        "describe this",
+        "read this page"
+      ],
+      "openCurrentItemOverlay": [
+        "enlarge",
+        "enlarge image",
+        "enlarge current image",
+        "make image bigger",
+        "make current image bigger",
+        "make the image bigger",
+        "make the current image bigger",
+        "enhance",
+        "enhance image"
+      ],
+      "closeItemOverlay": [
+        "close image",
+        "close overlay",
+        "hide image",
+        "exit image",
+        "close item image",
+        "close"
       ]
     }
   },

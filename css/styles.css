@@ -454,7 +454,7 @@ header {
     width: 90%;
     margin: auto;
     display: flex;
-    align-items: center;
+  align-items: flex-end;
     justify-content: space-between;
 }
 
@@ -478,23 +478,20 @@ header {
     display: flex;
     align-items: flex-end;
     outline: solid black 1px;
-    transition: transform 220ms ease, opacity 220ms ease, width 220ms ease, height 220ms ease;
+    transition: transform 360ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 360ms cubic-bezier(0.22, 0.61, 0.36, 1), width 360ms cubic-bezier(0.22, 0.61, 0.36, 1), height 360ms cubic-bezier(0.22, 0.61, 0.36, 1);
     will-change: transform, opacity;
 }
 
-  .image-card.carousel-enter-right {
-    transform: translateX(10px) scale(0.985);
-    opacity: 0.9;
+  .image-card.carousel-card-hidden {
+    opacity: 0;
   }
 
-  .image-card.carousel-enter-left {
-    transform: translateX(-10px) scale(0.985);
-    opacity: 0.9;
-  }
-
-  .image-card.carousel-enter-active {
-    transform: translateX(0) scale(1);
-    opacity: 1;
+  .image-card.carousel-motion-clone {
+    position: fixed;
+    margin: 0;
+    z-index: 30;
+    pointer-events: none;
+    transition: left 360ms cubic-bezier(0.22, 0.61, 0.36, 1), top 360ms cubic-bezier(0.22, 0.61, 0.36, 1), width 360ms cubic-bezier(0.22, 0.61, 0.36, 1), height 360ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 360ms cubic-bezier(0.22, 0.61, 0.36, 1);
   }
 
 .image-card.loading {
@@ -537,6 +534,51 @@ header {
   line-height: 1;
   z-index: 7;
   pointer-events: none;
+}
+
+.item-image-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(8, 10, 12, 0.72);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: clamp(0.55rem, 1.8vw, 1.25rem);
+}
+
+.item-image-overlay-panel {
+  width: clamp(18rem, 90vw, 70rem);
+  max-height: clamp(18rem, 92vh, 58rem);
+  overflow: auto;
+  background: rgba(18, 22, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 1rem;
+  box-shadow: 0 1rem 2.2rem rgba(0, 0, 0, 0.4);
+  padding: clamp(0.55rem, 1.2vw, 0.95rem);
+}
+
+.item-image-overlay-close {
+  display: block;
+  margin-left: auto;
+  margin-bottom: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(8, 10, 12, 0.65);
+  color: white;
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  font-family: "Jockey One", sans-serif;
+  cursor: pointer;
+}
+
+.item-image-overlay-image {
+  width: min(100%, clamp(16rem, 84vw, 66rem));
+  max-height: clamp(12rem, 72vh, 44rem);
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
 .image-card-center {

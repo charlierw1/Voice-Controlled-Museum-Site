@@ -1,7 +1,7 @@
 const CAROUSEL_VISIBLE_COUNT = 5;
 const CAROUSEL_CENTER_INDEX = 2;
 const CAROUSEL_PAGE_SIZE = 24;
-const CAROUSEL_ANIMATION_MS = 220;
+const CAROUSEL_ANIMATION_MS = 360;
 
 window.addEventListener("load", () => {
     initializeCarousel().catch((error) => {
@@ -67,6 +67,7 @@ function createCardSlots(state) {
 
         card.appendChild(label);
         anchor.appendChild(card);
+        card.style.setProperty("--carousel-slot", String(i));
 
         state.carousel.insertBefore(anchor, state.rightArrow);
         state.cardLinks.push(anchor);
@@ -119,11 +120,19 @@ async function shiftCarousel(state, direction) {
     }
 
     state.isBusy = true;
-    state.startIndex = targetStart;
-    renderWindow(state);
-    animateShift(state, direction);
-    preloadAhead(state);
-    state.isBusy = false;
+
+    try {
+        await animateShift(state, targetStart);
+        preloadAhead(state);
+    } finally {
+        state.isBusy = false;
+    }
+}
+
+function wait(ms) {
+    return new Promise((resolve) => {
+        window.setTimeout(resolve, ms);
+    });
 }
 
 async function ensureWindowData(state, minRecordsRequired) {
@@ -179,37 +188,45 @@ function renderWindow(state) {
         const record = state.records[recordIndex];
         const anchor = state.cardLinks[slot];
         const card = state.cardBodies[slot];
-        const label = card.querySelector("span");
-
-        card.classList.toggle("image-card-center", slot === CAROUSEL_CENTER_INDEX);
-
-        if (!record) {
-            card.classList.add("loading");
-            card.style.backgroundImage = "";
-            if (label) {
-                label.textContent = "Loading item";
-            }
-            anchor.href = "#";
-            continue;
-        }
-
-        const imageUrl = getBestImageUrl(record);
-        card.style.backgroundImage = `linear-gradient(rgba(8, 10, 12, 0.16), rgba(8, 10, 12, 0.62)), url('${imageUrl}')`;
-        card.style.backgroundSize = "130% 130%";
-        card.style.backgroundPosition = "center";
-        card.style.backgroundRepeat = "no-repeat";
-        card.classList.remove("loading");
-
-        if (label) {
-            label.textContent = getDisplayTitle(record);
-        }
-
-        anchor.href = getCollectionsUrl(record);
+        applyRecordToCard(card, anchor, record, slot);
     }
 
     updateArrowDisabledVisual(state, state.leftArrow, state.startIndex === 0);
     const cannotMoveRight = !state.hasMore && state.startIndex + CAROUSEL_VISIBLE_COUNT >= state.records.length;
     updateArrowDisabledVisual(state, state.rightArrow, cannotMoveRight);
+}
+
+function applyRecordToCard(card, anchor, record, slot) {
+    const label = card.querySelector("span");
+
+    card.classList.toggle("image-card-center", slot === CAROUSEL_CENTER_INDEX);
+
+    if (!record) {
+        card.classList.add("loading");
+        card.style.backgroundImage = "";
+        if (label) {
+            label.textContent = "Loading item";
+        }
+        if (anchor) {
+            anchor.href = "#";
+        }
+        return;
+    }
+
+    const imageUrl = getBestImageUrl(record);
+    card.style.backgroundImage = `linear-gradient(rgba(8, 10, 12, 0.16), rgba(8, 10, 12, 0.62)), url('${imageUrl}')`;
+    card.style.backgroundSize = "130% 130%";
+    card.style.backgroundPosition = "center";
+    card.style.backgroundRepeat = "no-repeat";
+    card.classList.remove("loading");
+
+    if (label) {
+        label.textContent = getDisplayTitle(record);
+    }
+
+    if (anchor) {
+        anchor.href = getCollectionsUrl(record);
+    }
 }
 
 function preloadAhead(state) {
@@ -241,27 +258,96 @@ function preloadAhead(state) {
     }
 }
 
-function animateShift(state, direction) {
-    const enterClass = direction > 0 ? "carousel-enter-right" : "carousel-enter-left";
+async function animateShift(state, targetStart) {
+    const direction = targetStart > state.startIndex ? 1 : -1;
+    const slotRects = state.cardBodies.map((card) => card.getBoundingClientRect());
+    const slotGap = slotRects.length > 1 ? slotRects[1].left - slotRects[0].left : slotRects[0].width;
+    const overlayClones = [];
 
     state.cardBodies.forEach((card) => {
-        card.classList.remove("carousel-enter-right", "carousel-enter-left", "carousel-enter-active");
-        card.classList.add(enterClass);
+        card.classList.add("carousel-card-hidden");
     });
+
+    for (let slot = 0; slot < CAROUSEL_VISIBLE_COUNT; slot += 1) {
+        const record = state.records[state.startIndex + slot];
+        const sourceRect = slotRects[slot];
+        const targetSlot = slot - direction;
+        const targetRect = slotRects[targetSlot];
+        const clone = createMotionClone(record, slot, sourceRect);
+
+        if (targetRect) {
+            moveCloneToRect(clone, sourceRect, targetRect);
+        } else {
+            moveCloneOffscreen(clone, direction, slotGap);
+        }
+
+        overlayClones.push(clone);
+    }
+
+    const incomingRecordIndex = direction > 0
+        ? targetStart + CAROUSEL_VISIBLE_COUNT - 1
+        : targetStart;
+    const incomingSlot = direction > 0 ? CAROUSEL_VISIBLE_COUNT - 1 : 0;
+    const incomingTargetRect = slotRects[incomingSlot];
+    const incomingStartRect = createIncomingRect(incomingTargetRect, direction, slotGap);
+    const incomingClone = createMotionClone(state.records[incomingRecordIndex], incomingSlot, incomingStartRect);
+    moveCloneToRect(incomingClone, incomingStartRect, incomingTargetRect);
+    overlayClones.push(incomingClone);
+
+    state.startIndex = targetStart;
+    renderWindow(state);
+
+    await wait(CAROUSEL_ANIMATION_MS + 50);
+
+    overlayClones.forEach((clone) => clone.remove());
+    state.cardBodies.forEach((card) => {
+        card.classList.remove("carousel-card-hidden");
+    });
+}
+
+function createMotionClone(record, slot, rect) {
+    const clone = document.createElement("div");
+    clone.className = "image-card carousel-motion-clone";
+
+    const label = document.createElement("span");
+    clone.appendChild(label);
+    applyRecordToCard(clone, null, record, slot);
+
+    clone.style.left = `${rect.left}px`;
+    clone.style.top = `${rect.top}px`;
+    clone.style.width = `${rect.width}px`;
+    clone.style.height = `${rect.height}px`;
+    clone.style.opacity = "1";
+
+    document.body.appendChild(clone);
+    return clone;
+}
+
+function createIncomingRect(targetRect, direction, slotGap) {
+    return {
+        left: targetRect.left + (direction > 0 ? slotGap : -slotGap),
+        top: targetRect.top,
+        width: targetRect.width,
+        height: targetRect.height
+    };
+}
+
+function moveCloneToRect(clone, sourceRect, targetRect) {
+    requestAnimationFrame(() => {
+        clone.style.left = `${targetRect.left}px`;
+        clone.style.top = `${targetRect.top}px`;
+        clone.style.width = `${targetRect.width}px`;
+        clone.style.height = `${targetRect.height}px`;
+    });
+}
+
+function moveCloneOffscreen(clone, direction, slotGap) {
+    const currentLeft = Number.parseFloat(clone.style.left || "0");
 
     requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            state.cardBodies.forEach((card) => {
-                card.classList.add("carousel-enter-active");
-            });
-        });
+        clone.style.opacity = "0";
+        clone.style.left = `${currentLeft + (direction > 0 ? -slotGap : slotGap)}px`;
     });
-
-    setTimeout(() => {
-        state.cardBodies.forEach((card) => {
-            card.classList.remove("carousel-enter-right", "carousel-enter-left", "carousel-enter-active");
-        });
-    }, CAROUSEL_ANIMATION_MS + 40);
 }
 
 function updateArrowDisabledVisual(state, arrow, isDisabled) {

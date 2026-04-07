@@ -104,8 +104,8 @@ function initializeItemCarousel(record, metaImages) {
     renderCarouselState(state);
     preloadAround(state);
 
-    wireItemArrow(leftArrow, () => rotateItemCarousel(state, -1));
-    wireItemArrow(rightArrow, () => rotateItemCarousel(state, 1));
+    wireItemArrow(leftArrow, () => rotateItemCarousel(state, 1));
+    wireItemArrow(rightArrow, () => rotateItemCarousel(state, -1));
 }
 
 function wireItemArrow(button, onActivate) {
