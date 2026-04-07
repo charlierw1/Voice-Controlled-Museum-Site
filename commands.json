@@ -1,0 +1,53 @@
+{
+  "directCommands": {
+    "navigation": {
+      "home": [
+        "take me back to the menu",
+        "take me back to the home page",
+        "go home",
+        "previous page",
+        "go back to the home page",
+        "back to home",
+        "return to home page",
+        "home",
+        "go back",
+        "home page",
+        "back to home page",
+        "back",
+        "menu",
+        "please send me back to the home page"
+      ],
+      "help": [
+        "display helpful commands",
+        "help"
+      ]
+    }
+  },
+  "parameterizedCommands": {
+    "navigation": {
+      "search": [
+        "show me *object",
+        "show me a list of *object",
+        "please show me *object",
+        "show more about *object",
+        "show me information about *object",
+        "museum *object",
+        "see *object",
+        "see item *object"
+      ],
+      "goToPage": [
+        "take me to the *object page",
+        "take me to *object"
+      ]
+    }
+  },
+  "disambiguatedParameterizedCommands": {
+    "objectExplanation": [
+        "tell me more about *object",
+        "tell me about *object",
+        "what are *object",
+        "what's *object"
+    ]
+  },
+  "disambiguatedDirectCommands": {}
+}

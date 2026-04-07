@@ -75,6 +75,31 @@ main {
   width: 5em;
   height: 5em;
   margin-top: 0.25em;
+  transition: fill 0.3s ease;
+  fill: #000000;
+}
+
+.mic svg.listening {
+  fill: #ffffff;
+  animation: micGlowEaseIn 0.8s ease-in forwards, micGlowPulse 0.6s ease-in-out 0.8s infinite;
+}
+
+@keyframes micGlowEaseIn {
+  0% {
+    filter: drop-shadow(0 0 0em #ffffff) drop-shadow(0 0 0em #5cc9ff);
+  }
+  100% {
+    filter: drop-shadow(0 0 0.5em #ffffff) drop-shadow(0 0 1em #5cc9ff);
+  }
+}
+
+@keyframes micGlowPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 0.5em #ffffff) drop-shadow(0 0 1em #5cc9ff);
+  }
+  50% {
+    filter: drop-shadow(0 0 1em #ffffff) drop-shadow(0 0 1.5em #5cc9ff);
+  }
 }
 
 @keyframes pulseGradient {

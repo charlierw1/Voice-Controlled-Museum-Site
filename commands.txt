@@ -32,3 +32,6 @@ Please send me back to the home page
 
 Display helpful commands
 Help
+
+direct (navigate to place with no arguments)
+
