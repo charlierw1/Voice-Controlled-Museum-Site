@@ -1,6 +1,7 @@
 window.addEventListener("load", async () => {
     const params = new URLSearchParams(window.location.search);
     const itemId = params.get("id");
+    const speakExplanation = params.get("voiceExplain") === "1";
 
     if (!itemId) {
         renderMissingItemState("No item selected.");
@@ -19,11 +20,30 @@ window.addEventListener("load", async () => {
 
         updateItemText(record);
         initializeItemCarousel(record, metaImages);
+
+        if (speakExplanation) {
+            speakItemExplanation(record);
+        }
     } catch (error) {
         console.error("Failed to load item data", error);
         renderMissingItemState("Could not load this item.");
     }
 });
+
+function speakItemExplanation(record) {
+    if (!window.speechSynthesis || typeof window.SpeechSynthesisUtterance !== "function") {
+        return;
+    }
+
+    const title = getItemTitle(record);
+    const description = getItemDescription(record);
+
+    const text = `Title: ${title}. Description: ${description}`;
+    const utterance = new SpeechSynthesisUtterance(text);
+
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+}
 
 function updateItemText(record) {
     const panel = document.querySelector(".item-panel");
@@ -240,23 +260,23 @@ function findBottomOrderIndex(imageSlots, orderedSlotIndexes) {
 
 function getSlotAngle(slot) {
     if (slot.classList.contains("orbit-right")) {
-        return 18;
+        return 36;
     }
 
     if (slot.classList.contains("circle-item-main")) {
-        return 90;
+        return 180;
     }
 
     if (slot.classList.contains("orbit-left")) {
-        return 162;
+        return 108;
     }
 
     if (slot.classList.contains("orbit-top-left")) {
-        return 234;
+        return 252;
     }
 
     if (slot.classList.contains("orbit-top-right")) {
-        return 306;
+        return 324;
     }
 
     return 0;

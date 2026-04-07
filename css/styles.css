@@ -1,11 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Jockey+One&display=swap');
 
+html {
+  min-height: 100%;
+  background: #080a0c;
+}
+
 body {
   margin: 0;
   padding-top: 3.5rem;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 
   background: linear-gradient(
     to bottom,
@@ -13,7 +19,8 @@ body {
     #080a0c 100%
   );
 
-  background-size: 100% 120%; /* extra height for animation */
+  background-repeat: no-repeat;
+  background-size: 100% 165%; /* overscan so the animated wave never exposes empty space */
   animation: pulseGradient 4s ease-in-out infinite;
 }
 
@@ -195,6 +202,32 @@ header {
   width: 60%;
 }
 
+.item-page main {
+  display: grid;
+  grid-template-columns: minmax(30rem, 1.2fr) minmax(22rem, 0.9fr);
+  align-items: start;
+  gap: 1.25rem;
+  padding: 1rem 1.25rem 0;
+  min-height: calc(100vh - 9.1rem);
+}
+
+.item-page .item-panel {
+  order: 1;
+  width: min(46rem, 52vw);
+  margin: 0;
+  padding: 1.4rem 1.6rem 2rem;
+  min-height: min(33rem, calc(100vh - 50vh));
+  margin-top: max(0.5rem, calc(50vh - 9.1rem));
+  align-self: end;
+  display: flex;
+  flex-direction: column;
+}
+
+.item-page .item-panel::after {
+  content: "";
+  flex: 1;
+}
+
 .item-page .item-panel h2 {
   font-size: clamp(1.35rem, 2.3vw, 3rem);
   margin: 0 0 0.8rem 0;
@@ -212,16 +245,21 @@ header {
 }
 
 .item-page .circle-carousel {
-  position: relative;
+  order: 2;
+  justify-self: end;
+  align-self: start;
+  position: fixed;
+  right: clamp(-28rem, -30vw, -14rem);
+  top: 6.75rem;
   --ring-rotation: 0deg;
   --counter-rotation: 0deg;
   --spin-duration: 440ms;
   --spin-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
-  width: min(56rem, 98vw);
-  height: min(56rem, 98vw);
-  margin: 0 auto;
-  transform: translateY(-50%);
-  overflow: hidden;
+  width: min(56rem, 62vw);
+  height: min(56rem, 62vw);
+  margin: 0;
+  transform: none;
+  overflow: visible;
   border-radius: 50%;
   background: radial-gradient(circle at 50% 50%, rgba(144, 152, 180, 0.42) 0%, rgba(17, 20, 27, 0.1) 68%, rgba(17, 20, 27, 0) 100%);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -232,7 +270,7 @@ header {
 .circle-carousel-track {
   position: absolute;
   inset: 0;
-  --orbit-radius: clamp(9.5rem, 20.5vw, 16.5rem);
+  --orbit-radius: clamp(12rem, 24vw, 22rem);
   transform: rotate(var(--ring-rotation));
   transform-origin: 50% 50%;
   transition: transform var(--spin-duration) var(--spin-ease);
@@ -277,11 +315,19 @@ header {
 }
 
 .item-carousel-arrow-left {
-  left: 1.1rem;
+  left: 4%;
 }
 
 .item-carousel-arrow-right {
-  right: 1.1rem;
+  right: 50%;
+}
+
+.item-page .circle-item {
+  width: clamp(11rem, 19vw, 16.5rem);
+}
+
+.item-page .circle-item-image {
+  height: clamp(6.2rem, 10.6vw, 10rem);
 }
 
 .circle-item {
@@ -342,23 +388,23 @@ header {
 }
 
 .item-page .orbit-top-left {
-  --slot-angle: 234deg;
+  --slot-angle: 252deg;
 }
 
 .item-page .orbit-top-right {
-  --slot-angle: 306deg;
+  --slot-angle: 324deg;
 }
 
 .item-page .orbit-left {
-  --slot-angle: 162deg;
+  --slot-angle: 108deg;
 }
 
 .item-page .orbit-right {
-  --slot-angle: 18deg;
+  --slot-angle: 36deg;
 }
 
 .item-page .circle-item-main {
-  --slot-angle: 90deg;
+  --slot-angle: 180deg;
   width: clamp(9.2rem, 16.8vw, 14.2rem);
   z-index: 3;
 }
@@ -368,8 +414,40 @@ header {
 }
 
 .item-page .panel {
-  margin-top: -6rem;
-  padding: 1.4rem 1.6rem 2rem;
+  margin: 0;
+}
+
+@media (max-width: 980px) {
+  .item-page main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .item-page .item-panel {
+    width: min(42rem, 96vw);
+    margin-top: 0;
+    align-self: auto;
+    min-height: auto;
+  }
+
+  .item-page .item-panel::after {
+    display: none;
+  }
+
+  .item-page .circle-carousel {
+    position: relative;
+    right: auto;
+    top: auto;
+    width: min(34rem, 90vw);
+    height: min(34rem, 90vw);
+    margin-right: 0;
+    overflow: hidden;
+  }
+
+  .item-carousel-arrow-right {
+    right: 1.1rem;
+  }
 }
 
 .carousel {
@@ -435,6 +513,30 @@ header {
 .image-card span {
     position: relative;
     z-index: 1;
+}
+
+.voice-choice-overlay-host {
+  position: relative;
+}
+
+.voice-choice-overlay {
+  position: absolute;
+  top: 0.38rem;
+  right: 0.38rem;
+  min-width: 1.45rem;
+  height: 1.45rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 10, 12, 0.86);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  font-family: "Jockey One", sans-serif;
+  font-size: 0.92rem;
+  line-height: 1;
+  z-index: 7;
+  pointer-events: none;
 }
 
 .image-card-center {

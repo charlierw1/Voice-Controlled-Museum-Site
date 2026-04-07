@@ -21,6 +21,42 @@
         "display helpful commands",
         "help"
       ]
+    },
+    "pageCommands": {
+      "cancel": [
+        "cancel",
+        "stop",
+        "never mind",
+        "stop current action"
+      ],
+      "carouselLeft": [
+        "move left",
+        "carousel left",
+        "move carousel left",
+        "go left",
+        "previous item",
+        "left"
+      ],
+      "carouselRight": [
+        "move right",
+        "carousel right",
+        "move carousel right",
+        "go right",
+        "next item",
+        "right"
+      ],
+      "scrollUp": [
+        "scroll up",
+        "move up",
+        "page up",
+        "go up"
+      ],
+      "scrollDown": [
+        "scroll down",
+        "move down",
+        "page down",
+        "go down"
+      ]
     }
   },
   "parameterizedCommands": {
@@ -34,6 +70,13 @@
         "museum *object",
         "see *object",
         "see item *object"
+      ],
+      "openItemOnPage": [
+        "open *object",
+        "open item *object",
+        "take me to *object item",
+        "go to *object item",
+        "show *object item"
       ],
       "goToPage": [
         "take me to the *object page",
