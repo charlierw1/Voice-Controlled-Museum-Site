@@ -659,6 +659,11 @@ if (!window.voiceCommandsInitialized) {
   }
 
   function scrollPage(direction) {
+    if (document.body.classList.contains("scroll-page") && window.scrollPageController && typeof window.scrollPageController.scroll === "function") {
+      window.scrollPageController.scroll(direction);
+      return;
+    }
+
     const viewportStep = Math.max(180, Math.round(window.innerHeight * 0.7));
     window.scrollBy({
       top: direction < 0 ? -viewportStep : viewportStep,

@@ -24,11 +24,21 @@ body {
   animation: pulseGradient 4s ease-in-out infinite;
 }
 
+.scroll-page {
+  height: 100vh;
+  overflow: hidden;
+}
+
 main {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+.scroll-page main {
+  overflow: hidden;
+  padding-bottom: 0.9rem;
 }
 
 .temp-nav {
@@ -607,10 +617,15 @@ header {
 
 .scroll-box {
   position: relative;
-  width: 60%;
+  width: min(60%, calc(100% - 2rem));
+  min-height: 0;
   margin: 2em auto 0;
-  display: flex;
-  justify-content: space-around;
+  padding: 1.25rem clamp(1rem, 3vw, 2rem) 2.5rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: stretch;
+  overflow: hidden;
 }
 
 .scroll-lines-canvas {
@@ -625,9 +640,93 @@ header {
 .scroll-panel {
   position: relative;
   z-index: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.scroll-panel-viewport {
+  position: relative;
+  height: auto;
+  max-height: 100%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+}
+
+.scroll-panel-track {
   display: flex;
   flex-direction: column;
-  justify-content: space-around;
+  gap: clamp(1rem, 2vw, 1.45rem);
+  align-items: center;
+  will-change: transform;
+}
+
+.scroll-panel a {
+  display: block;
+}
+
+.scroll-panel a.scroll-card-peripheral {
+  pointer-events: none;
+}
+
+.scroll-panel a.scroll-card-peripheral .image-card {
+  opacity: 0.42;
+}
+
+.scroll-panel a.scroll-card-peripheral-top .image-card {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.22) 42%, #000000 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.22) 42%, #000000 100%);
+}
+
+.scroll-panel a.scroll-card-peripheral-bottom .image-card {
+  -webkit-mask-image: linear-gradient(to bottom, #000000 0%, rgba(0, 0, 0, 0.22) 58%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000000 0%, rgba(0, 0, 0, 0.22) 58%, transparent 100%);
+}
+
+.scroll-page .scroll-panel .image-card {
+  width: clamp(8.5rem, 15vw, 25rem);
+  height: clamp(4.75rem, 9.6vw, 15rem);
+}
+
+.scroll-test-controls {
+  position: absolute;
+  top: 50%;
+  right: clamp(0.45rem, 1.6vw, 1rem);
+  transform: translateY(-50%);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.scroll-test-button {
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 999px;
+  background: rgba(8, 10, 12, 0.72);
+  color: #ffffff;
+  font-family: "Jockey One", sans-serif;
+  font-size: 0.95rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  box-shadow: 0 0.45rem 1rem rgba(0, 0, 0, 0.28);
+}
+
+.scroll-test-button:hover,
+.scroll-test-button:focus-visible {
+  background: rgba(8, 10, 12, 0.9);
+  outline: none;
+}
+
+.scroll-test-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.scroll-panel .image-card.scroll-card-placeholder {
+  background-image: linear-gradient(135deg, rgba(95, 101, 121, 0.95), rgba(67, 73, 94, 0.95));
+  background-size: cover;
 }
 
 .scroll-page .scroll-box .mic {
@@ -651,6 +750,48 @@ header {
   }
   to {
     top: 50%;
+  }
+}
+
+@media (max-width: 900px) {
+  .scroll-box {
+    width: min(80%, calc(100% - 1rem));
+    column-gap: clamp(1rem, 3vw, 1.6rem);
+    padding: 1rem 0.75rem 2.2rem;
+  }
+
+  .scroll-page .scroll-panel .image-card {
+    width: clamp(8rem, 28vw, 18rem);
+    height: clamp(4.6rem, 15vw, 9rem);
+  }
+
+  .scroll-test-controls {
+    top: auto;
+    bottom: 1rem;
+    right: 0.7rem;
+    transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .scroll-box {
+    width: min(96%, calc(100% - 0.8rem));
+    padding-right: 4.8rem;
+  }
+
+  .scroll-page .scroll-box .mic {
+    width: 8.5em;
+    height: 8.5em;
+  }
+
+  .scroll-page .scroll-box .mic svg {
+    width: 4.2em;
+    height: 4.2em;
+  }
+
+  .scroll-test-button {
+    font-size: 0.84rem;
+    padding: 0.65rem 0.8rem;
   }
 }
 

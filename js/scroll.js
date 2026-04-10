@@ -1,54 +1,8 @@
-async function populateScrollCards(cardElements) {
-    const params = new URLSearchParams(window.location.search);
-    const query = params.get("q");
-
-    if (!query) {
-        cardElements.forEach((card) => {
-            card.classList.remove("loading");
-            const label = card.querySelector("span");
-            if (label) {
-                label.textContent = "No search query";
-            }
-        });
-        return;
-    }
-
-    const queryString = `${encodeURIComponent(query)}&page_size=${cardElements.length}`;
-    const data = await getData(searchURL, queryString);
-    const records = data?.records ?? [];
-
-    cardElements.forEach((card, index) => {
-        const record = records[index];
-        const anchor = card.parentElement;
-
-        card.classList.remove("loading");
-
-        const label = card.querySelector("span");
-
-        if (!record) {
-            if (label) {
-                label.textContent = "No result";
-            }
-            return;
-        }
-
-        const imageUrl = getScrollImageUrl(record);
-        if (imageUrl) {
-            card.style.backgroundImage = `linear-gradient(rgba(8, 10, 12, 0.16), rgba(8, 10, 12, 0.62)), url('${imageUrl}')`;
-            card.style.backgroundSize = "cover, cover";
-            card.style.backgroundPosition = "center";
-            card.style.backgroundRepeat = "no-repeat";
-        }
-
-        if (label) {
-            label.textContent = getScrollDisplayTitle(record);
-        }
-
-        if (anchor && record?.systemNumber) {
-            anchor.href = `item.html?id=${encodeURIComponent(record.systemNumber)}`;
-        }
-    });
-}
+const SCROLL_VISIBLE_ROWS = 3;
+const SCROLL_BUFFER_ROWS = 1;
+const SCROLL_FETCH_SIZE = 24;
+const SCROLL_ANIMATION_MS = 420;
+const SCROLL_PEEK_RATIO = 0.34;
 
 function getScrollImageUrl(record) {
     const iiifBase = record?._images?._iiif_image_base_url;
@@ -68,12 +22,88 @@ function getScrollDisplayTitle(record) {
     return "Untitled object";
 }
 
+function createScrollCardSlot() {
+    const anchor = document.createElement("a");
+    anchor.href = "#";
+
+    const card = document.createElement("div");
+    card.className = "image-card loading";
+
+    const label = document.createElement("span");
+    label.textContent = "Card Name";
+
+    card.append(label);
+    anchor.append(card);
+
+    return anchor;
+}
+
+function applyRecordToSlot(slot, record) {
+    const card = slot.querySelector(".image-card");
+    const label = card?.querySelector("span");
+
+    if (!card || !label) {
+        return;
+    }
+
+    card.classList.remove("loading", "scroll-card-placeholder");
+    card.style.backgroundImage = "";
+    card.style.backgroundSize = "";
+    card.style.backgroundPosition = "";
+    card.style.backgroundRepeat = "";
+    slot.removeAttribute("aria-disabled");
+    slot.tabIndex = 0;
+
+    if (!record?.systemNumber) {
+        slot.removeAttribute("href");
+        slot.setAttribute("aria-disabled", "true");
+        slot.tabIndex = -1;
+        card.classList.add("scroll-card-placeholder");
+        label.textContent = record?._placeholderLabel || "No result";
+        return;
+    }
+
+    const imageUrl = getScrollImageUrl(record);
+    if (imageUrl) {
+        card.style.backgroundImage = `linear-gradient(rgba(8, 10, 12, 0.16), rgba(8, 10, 12, 0.62)), url('${imageUrl}')`;
+        card.style.backgroundSize = "cover, cover";
+        card.style.backgroundPosition = "center";
+        card.style.backgroundRepeat = "no-repeat";
+    }
+
+    label.textContent = getScrollDisplayTitle(record);
+    slot.href = `item.html?id=${encodeURIComponent(record.systemNumber)}`;
+}
+
+function applyScrollSlotState(slot, relativeRowIndex) {
+    slot.classList.remove("scroll-card-peripheral", "scroll-card-peripheral-top", "scroll-card-peripheral-bottom", "scroll-card-focus");
+
+    if (relativeRowIndex < 0) {
+        slot.classList.add("scroll-card-peripheral", "scroll-card-peripheral-top");
+        return;
+    }
+
+    if (relativeRowIndex >= SCROLL_VISIBLE_ROWS) {
+        slot.classList.add("scroll-card-peripheral", "scroll-card-peripheral-bottom");
+        return;
+    }
+
+    slot.classList.add("scroll-card-focus");
+}
+
 window.addEventListener("load", () => {
     const scrollBox = document.querySelector(".scroll-page .scroll-box");
     const mic = scrollBox?.querySelector(".mic");
-    const cards = scrollBox ? Array.from(scrollBox.querySelectorAll(".image-card")) : [];
+    const buttons = scrollBox ? Array.from(scrollBox.querySelectorAll(".scroll-test-button")) : [];
+    const columns = scrollBox
+        ? Array.from(scrollBox.querySelectorAll(".scroll-panel")).map((panel, index) => ({
+            index,
+            viewport: panel.querySelector(".scroll-panel-viewport"),
+            track: panel.querySelector(".scroll-panel-track")
+        }))
+        : [];
 
-    if (!scrollBox || !mic || !cards.length) {
+    if (!scrollBox || !mic || !columns.length || columns.some((column) => !column.viewport || !column.track)) {
         return;
     }
 
@@ -85,6 +115,15 @@ window.addEventListener("load", () => {
     if (!context) {
         return;
     }
+
+    const params = new URLSearchParams(window.location.search);
+    const query = params.get("q")?.trim() || "";
+    const state = {
+        emptyStateLabel: query ? "No results found" : "No search query",
+        isAnimating: false,
+        records: [],
+        topRowIndex: 0
+    };
 
     let resizeObserver;
 
@@ -101,6 +140,97 @@ window.addEventListener("load", () => {
         context.scale(dpr, dpr);
     }
 
+    function getTotalRows() {
+        return Math.ceil(state.records.length / columns.length);
+    }
+
+    function getMaxTopRowIndex() {
+        return Math.max(0, getTotalRows() - SCROLL_VISIBLE_ROWS);
+    }
+
+    function getRecordForPosition(rowIndex, columnIndex) {
+        if (rowIndex < 0) {
+            return { _placeholderLabel: state.emptyStateLabel };
+        }
+
+        const record = state.records[(rowIndex * columns.length) + columnIndex];
+        if (record) {
+            return record;
+        }
+
+        return {
+            _placeholderLabel: state.records.length ? "No result" : state.emptyStateLabel
+        };
+    }
+
+    function buildVisibleTargets() {
+        const boxRect = scrollBox.getBoundingClientRect();
+        const micRect = mic.getBoundingClientRect();
+        const micX = micRect.left + micRect.width / 2 - boxRect.left;
+        const targets = {
+            left: [],
+            right: []
+        };
+
+        columns.forEach((column) => {
+            const viewportRect = column.viewport.getBoundingClientRect();
+            const cards = Array.from(column.track.querySelectorAll(".image-card"));
+
+            cards.forEach((card) => {
+                if (card.closest(".scroll-card-peripheral")) {
+                    return;
+                }
+
+                const cardRect = card.getBoundingClientRect();
+                const intersectionLeft = Math.max(cardRect.left, viewportRect.left);
+                const intersectionRight = Math.min(cardRect.right, viewportRect.right);
+                const intersectionTop = Math.max(cardRect.top, viewportRect.top);
+                const intersectionBottom = Math.min(cardRect.bottom, viewportRect.bottom);
+
+                if (intersectionLeft >= intersectionRight || intersectionTop >= intersectionBottom) {
+                    return;
+                }
+
+                const target = {
+                    x: column.index === 0 ? intersectionRight - boxRect.left : intersectionLeft - boxRect.left,
+                    y: ((intersectionTop + intersectionBottom) / 2) - boxRect.top
+                };
+
+                if (((intersectionLeft + intersectionRight) / 2) - boxRect.left < micX) {
+                    targets.left.push(target);
+                } else {
+                    targets.right.push(target);
+                }
+            });
+        });
+
+        targets.left.sort((a, b) => b.y - a.y);
+        targets.right.sort((a, b) => a.y - b.y);
+
+        return targets;
+    }
+
+    function buildAnchorsOnArc(centerX, centerY, radius, startDeg, endDeg, count) {
+        if (count <= 0) {
+            return [];
+        }
+
+        const anchors = [];
+        const step = count === 1 ? 0 : (endDeg - startDeg) / (count - 1);
+
+        for (let i = 0; i < count; i += 1) {
+            const angleDeg = count === 1 ? (startDeg + endDeg) / 2 : startDeg + (step * i);
+            const angleRad = (angleDeg * Math.PI) / 180;
+
+            anchors.push({
+                x: centerX + (Math.cos(angleRad) * radius),
+                y: centerY + (Math.sin(angleRad) * radius)
+            });
+        }
+
+        return anchors;
+    }
+
     function drawLines() {
         resizeCanvas();
 
@@ -109,36 +239,16 @@ window.addEventListener("load", () => {
         const micX = micRect.left + micRect.width / 2 - boxRect.left;
         const micY = micRect.top + micRect.height / 2 - boxRect.top;
         const micRadius = Math.min(micRect.width, micRect.height) / 2;
+        const targets = buildVisibleTargets();
+        const leftAnchors = buildAnchorsOnArc(micX, micY, micRadius, 145, 215, targets.left.length);
+        const rightAnchors = buildAnchorsOnArc(micX, micY, micRadius, -35, 35, targets.right.length);
 
         context.clearRect(0, 0, boxRect.width, boxRect.height);
         context.strokeStyle = "#000000";
         context.lineWidth = 2;
         context.lineCap = "round";
 
-        const leftTargets = [];
-        const rightTargets = [];
-
-        cards.forEach((card) => {
-            const cardRect = card.getBoundingClientRect();
-            const cardCenterX = cardRect.left + cardRect.width / 2 - boxRect.left;
-            const cardCenterY = cardRect.top + cardRect.height / 2 - boxRect.top;
-            const cardLeft = cardRect.left - boxRect.left;
-            const cardRight = cardRect.right - boxRect.left;
-
-            if (cardCenterX < micX) {
-                leftTargets.push({ x: cardRight, y: cardCenterY });
-            } else {
-                rightTargets.push({ x: cardLeft, y: cardCenterY });
-            }
-        });
-
-        leftTargets.sort((a, b) => b.y - a.y);
-        rightTargets.sort((a, b) => a.y - b.y);
-
-        const leftAnchors = buildAnchorsOnArc(micX, micY, micRadius, 145, 215, leftTargets.length);
-        const rightAnchors = buildAnchorsOnArc(micX, micY, micRadius, -35, 35, rightTargets.length);
-
-        leftTargets.forEach((target, index) => {
+        targets.left.forEach((target, index) => {
             const anchor = leftAnchors[index];
             if (!anchor) {
                 return;
@@ -150,7 +260,7 @@ window.addEventListener("load", () => {
             context.stroke();
         });
 
-        rightTargets.forEach((target, index) => {
+        targets.right.forEach((target, index) => {
             const anchor = rightAnchors[index];
             if (!anchor) {
                 return;
@@ -163,25 +273,145 @@ window.addEventListener("load", () => {
         });
     }
 
-    function buildAnchorsOnArc(centerX, centerY, radius, startDeg, endDeg, count) {
-        if (count <= 0) {
-            return [];
+    function renderVisibleRows() {
+        columns.forEach((column) => {
+            const slots = [];
+
+            for (let visibleIndex = -SCROLL_BUFFER_ROWS; visibleIndex < SCROLL_VISIBLE_ROWS + SCROLL_BUFFER_ROWS; visibleIndex += 1) {
+                const slot = createScrollCardSlot();
+                const rowIndex = state.topRowIndex + visibleIndex;
+                applyRecordToSlot(slot, getRecordForPosition(rowIndex, column.index));
+                applyScrollSlotState(slot, visibleIndex);
+                slots.push(slot);
+            }
+
+            column.track.replaceChildren(...slots);
+        });
+
+        updateViewportHeights();
+        columns.forEach((column) => {
+            column.track.style.transform = `translateY(${state.baseOffset}px)`;
+        });
+        drawLines();
+        updateButtonState();
+    }
+
+    function updateButtonState() {
+        buttons.forEach((button) => {
+            const direction = Number(button.dataset.direction || "0");
+            const nextRowIndex = state.topRowIndex + direction;
+            const isBlocked = direction === 0 || nextRowIndex < 0 || nextRowIndex > getMaxTopRowIndex();
+
+            button.disabled = state.isAnimating || isBlocked;
+        });
+    }
+
+    function getRowStep() {
+        const firstTrack = columns[0]?.track;
+        const firstSlot = firstTrack?.firstElementChild;
+        if (!firstSlot) {
+            return 0;
         }
 
-        const anchors = [];
-        const step = count === 1 ? 0 : (endDeg - startDeg) / (count - 1);
+        const gap = parseFloat(window.getComputedStyle(firstTrack).rowGap || window.getComputedStyle(firstTrack).gap || "0");
+        return firstSlot.getBoundingClientRect().height + gap;
+    }
 
-        for (let i = 0; i < count; i += 1) {
-            const angleDeg = count === 1 ? (startDeg + endDeg) / 2 : startDeg + step * i;
-            const angleRad = (angleDeg * Math.PI) / 180;
+    function updateViewportHeights() {
+        const firstTrack = columns[0]?.track;
+        const firstSlot = firstTrack?.firstElementChild;
+        if (!firstTrack || !firstSlot) {
+            return;
+        }
 
-            anchors.push({
-                x: centerX + Math.cos(angleRad) * radius,
-                y: centerY + Math.sin(angleRad) * radius
+        const gap = parseFloat(window.getComputedStyle(firstTrack).rowGap || window.getComputedStyle(firstTrack).gap || "0");
+        const cardHeight = firstSlot.getBoundingClientRect().height;
+        const rowStep = cardHeight + gap;
+        const peekHeight = Math.round(cardHeight * SCROLL_PEEK_RATIO);
+        const visibleHeight = (firstSlot.getBoundingClientRect().height * SCROLL_VISIBLE_ROWS) + (gap * Math.max(0, SCROLL_VISIBLE_ROWS - 1));
+        const viewportHeight = visibleHeight + (peekHeight * 2);
+
+        state.baseOffset = -(rowStep - peekHeight);
+        state.rowStep = rowStep;
+
+        columns.forEach((column) => {
+            column.viewport.style.height = `${viewportHeight}px`;
+        });
+    }
+
+    function easeInOutCubic(progress) {
+        return progress < 0.5
+            ? 4 * progress * progress * progress
+            : 1 - (Math.pow(-2 * progress + 2, 3) / 2);
+    }
+
+    function animateTracks(direction, stepPx) {
+        const start = performance.now();
+        const startOffset = direction > 0 ? state.baseOffset : state.baseOffset - stepPx;
+        const targetOffset = direction > 0 ? state.baseOffset - stepPx : state.baseOffset;
+
+        function frame(now) {
+            const rawProgress = Math.min(1, (now - start) / SCROLL_ANIMATION_MS);
+            const easedProgress = easeInOutCubic(rawProgress);
+            const currentOffset = startOffset + ((targetOffset - startOffset) * easedProgress);
+
+            columns.forEach((column) => {
+                column.track.style.transform = `translateY(${currentOffset}px)`;
             });
+
+            drawLines();
+
+            if (rawProgress < 1) {
+                requestAnimationFrame(frame);
+                return;
+            }
+
+            state.topRowIndex += direction;
+            state.isAnimating = false;
+            renderVisibleRows();
         }
 
-        return anchors;
+        requestAnimationFrame(frame);
+    }
+
+    function scrollRecords(direction) {
+        if (state.isAnimating) {
+            return false;
+        }
+
+        const nextRowIndex = state.topRowIndex + direction;
+        if (nextRowIndex < 0 || nextRowIndex > getMaxTopRowIndex()) {
+            return false;
+        }
+
+        const rowStep = getRowStep();
+        if (!rowStep) {
+            return false;
+        }
+
+        state.isAnimating = true;
+        updateButtonState();
+
+        columns.forEach((column) => {
+            const incomingSlot = createScrollCardSlot();
+            const incomingRowIndex = direction > 0
+                ? state.topRowIndex + SCROLL_VISIBLE_ROWS + SCROLL_BUFFER_ROWS
+                : state.topRowIndex - SCROLL_BUFFER_ROWS - 1;
+
+            applyRecordToSlot(incomingSlot, getRecordForPosition(incomingRowIndex, column.index));
+
+            if (direction > 0) {
+                applyScrollSlotState(incomingSlot, SCROLL_VISIBLE_ROWS + SCROLL_BUFFER_ROWS);
+                column.track.append(incomingSlot);
+            } else {
+                applyScrollSlotState(incomingSlot, -SCROLL_BUFFER_ROWS - 1);
+                column.track.prepend(incomingSlot);
+                column.track.style.transform = `translateY(${state.baseOffset - rowStep}px)`;
+            }
+        });
+
+        animateTracks(direction, rowStep);
+        return true;
     }
 
     function animateInitialDraw(durationMs) {
@@ -197,21 +427,55 @@ window.addEventListener("load", () => {
         requestAnimationFrame(frame);
     }
 
-    drawLines();
-    animateInitialDraw(1400);
-
-    populateScrollCards(cards).then(() => {
-        drawLines();
-    }).catch((error) => {
-        console.error("Failed to populate scroll cards", error);
+    buttons.forEach((button) => {
+        button.addEventListener("click", () => {
+            const direction = Number(button.dataset.direction || "0");
+            if (direction) {
+                scrollRecords(direction);
+            }
+        });
     });
 
-    mic.addEventListener("animationend", drawLines);
-    window.addEventListener("resize", drawLines);
-    window.addEventListener("scroll", drawLines, { passive: true });
+    window.scrollPageController = {
+        scroll(direction) {
+            return scrollRecords(direction);
+        },
+        redraw() {
+            drawLines();
+        }
+    };
+
+    renderVisibleRows();
+    animateInitialDraw(1400);
+
+    if (query) {
+        const queryString = `${encodeURIComponent(query)}&page_size=${SCROLL_FETCH_SIZE}`;
+        getData(searchURL, queryString).then((data) => {
+            state.records = data?.records ?? [];
+            state.topRowIndex = 0;
+            state.emptyStateLabel = state.records.length ? "No result" : "No results found";
+            renderVisibleRows();
+        }).catch((error) => {
+            console.error("Failed to populate scroll cards", error);
+            state.records = [];
+            state.emptyStateLabel = "Could not load results";
+            renderVisibleRows();
+        });
+    }
+
+    function handleLayoutChange() {
+        updateViewportHeights();
+        drawLines();
+    }
+
+    mic.addEventListener("animationend", handleLayoutChange);
+    window.addEventListener("resize", handleLayoutChange);
 
     if ("ResizeObserver" in window) {
-        resizeObserver = new ResizeObserver(drawLines);
+        resizeObserver = new ResizeObserver(handleLayoutChange);
         resizeObserver.observe(scrollBox);
+        columns.forEach((column) => {
+            resizeObserver.observe(column.viewport);
+        });
     }
 });
