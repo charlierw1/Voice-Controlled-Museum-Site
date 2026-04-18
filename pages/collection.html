@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="../css/styles.css">
     <title>Collection</title>
 </head>
-<body>
+<body class="collection-page">
     <nav class="temp-nav" aria-label="Temporary site navigation">
         <a href="../index.html">Home</a>
         <a href="collection.html">Collection</a>
@@ -20,13 +20,13 @@
     </header>
     <main>
         <a href="#">
-            <div class="banner">
+            <div class="banner loading">
                 <h2>Current Big Collection</h2>
                 <span>Small Collection Description</span>
             </div>
         </a>
         <div class="carousel">
-            <svg width="32" height="32" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <svg class="arrow" width="32" height="32" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M14.5 5 7.5 12l7 7" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
             </svg>
             <a href="#">
@@ -54,34 +54,39 @@
                     <span>Collection Name</span>
                 </div>
             </a>
-            <svg width="32" height="32" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <svg class="arrow" width="32" height="32" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="m9.5 5 7 7-7 7" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
             </svg>
         </div>
-        <article class="panel">
-            <div>
+        <article class="panel item-grid">
+            <div class="collection-text">
                 <h2>Collection Name</h2>
                 <p>Collection Description</p>
             </div>
             <a href="#">
-                <img src="#" alt="#" width="300" height="200">
-                <span>Card Name</span>
+                <div class="image-card loading">
+                    <span>Card Name</span>
+                </div>
             </a>
             <a href="#">
-                <img src="#" alt="#" width="300" height="200">
-                <span>Card Name</span>
+                <div class="image-card loading">
+                    <span>Card Name</span>
+                </div>
             </a>
             <a href="#">
-                <img src="#" alt="#" width="300" height="200">
-                <span>Card Name</span>
+                <div class="image-card loading">
+                    <span>Card Name</span>
+                </div>
             </a>
             <a href="#">
-                <img src="#" alt="#" width="300" height="200">
-                <span>Card Name</span>
+                <div class="image-card loading">
+                    <span>Card Name</span>
+                </div>
             </a>
             <a href="#">
-                <img src="#" alt="#" width="300" height="200">
-                <span>Card Name</span>
+                <div class="image-card loading">
+                    <span>Card Name</span>
+                </div>
             </a>
         </article>
     </main>
@@ -92,7 +97,7 @@
     </div>
     <script src="../js/annyang.min.js"></script>
     <script src="../js/api.js"></script>
-    <script src="../js/carousel.js"></script>
+    <script src="../js/collection.js"></script>
     <script src="../js/voice-commands.js"></script>
     <div class="fixed-bottom" aria-hidden="true"></div>
 </body>

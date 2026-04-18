@@ -1,394 +1,230 @@
-// Only initialize voice commands once per page load
-if (!window.voiceCommandsInitialized) {
+(function () {
+  if (window.voiceCommandsInitialized) return;
   window.voiceCommandsInitialized = true;
 
   const annyang = window.annyang;
+  if (!annyang) return;
+
+  /* -----------------------------------------------
+     Constants
+     ----------------------------------------------- */
+
   const ORDINAL_WORDS = ["first", "second", "third"];
   const CARDINAL_TO_INDEX = {
-    "one": 0,
-    "won": 0,
-    "two": 1,
-    "to": 1,
-    "too": 1,
-    "three": 2,
-    "four": 3,
-    "for": 3,
-    "five": 4,
-    "six": 5,
-    "seven": 6,
-    "eight": 7,
-    "ate": 7,
-    "nine": 8
+    one: 0, won: 0, two: 1, to: 1, too: 1, three: 2,
+    four: 3, for: 3, five: 4, six: 5, seven: 6,
+    eight: 7, ate: 7, nine: 8
   };
   const CLARIFICATION_TIMEOUT_MS = 22000;
 
-  let baseCommandGroups = {
-    home: [],
-    help: [],
-    cancel: [],
-    carouselLeft: [],
-    carouselRight: [],
-    scrollUp: [],
-    scrollDown: [],
-    readCurrentItem: [],
-    openCurrentItemOverlay: [],
-    closeItemOverlay: [],
-    search: [],
-    openItemOnPage: [],
-    objectExplanation: []
+  // Each command's JSON config path.
+  const COMMAND_DEFS = {
+    home:                    ["directCommands", "navigation", "home"],
+    help:                    ["directCommands", "navigation", "help"],
+    cancel:                  ["directCommands", "pageCommands", "cancel"],
+    carouselLeft:            ["directCommands", "pageCommands", "carouselLeft"],
+    carouselRight:           ["directCommands", "pageCommands", "carouselRight"],
+    scrollUp:                ["directCommands", "pageCommands", "scrollUp"],
+    scrollDown:              ["directCommands", "pageCommands", "scrollDown"],
+    readCurrentItem:         ["directCommands", "pageCommands", "readCurrentItem"],
+    openCurrentItemOverlay:  ["directCommands", "pageCommands", "openCurrentItemOverlay"],
+    closeItemOverlay:        ["directCommands", "pageCommands", "closeItemOverlay"],
+    creatorCollectionSearch: ["parameterizedCommands", "navigation", "creatorCollectionSearch"],
+    search:                  ["parameterizedCommands", "navigation", "search"],
+    openItemOnPage:          ["parameterizedCommands", "navigation", "openItemOnPage"],
+    objectExplanation:       ["disambiguatedParameterizedCommands", "objectExplanation"]
   };
 
+  /* -----------------------------------------------
+     State
+     ----------------------------------------------- */
+
+  let commandPhrases = {};
   let clarificationState = null;
-  let clarificationTokenCounter = 0;
-  let itemImageOverlayElement = null;
+  let clarificationToken = 0;
+  let overlayElement = null;
 
-  // Build annyang command maps from a list of phrases and one handler.
-  function createCommands(phrases, handler) {
-    // Register specific phrases before broad ones so overlaps resolve correctly.
-    const orderedPhrases = [...phrases].sort((a, b) => {
-      const aScore = a.replace(/\*/g, "").length;
-      const bScore = b.replace(/\*/g, "").length;
-      return bScore - aScore;
-    });
-
-    const commands = {};
-    orderedPhrases.forEach(phrase => {
-      commands[phrase] = handler;
-    });
-    return commands;
-  }
-
-  // Load nested command arrays from commands.json using a path of keys.
-  async function getCommandsFromJson(filePath, categoryPath) {
-    const response = await fetch(filePath);
-
-    if (!response.ok) {
-      throw new Error(`Unable to load command json: ${filePath}`);
-    }
-
-    const data = await response.json();
-    const commands = categoryPath.reduce((current, key) => {
-      if (!current || typeof current !== "object") {
-        return undefined;
-      }
-      return current[key];
-    }, data);
-
-    return Array.isArray(commands) ? commands : [];
-  }
-
-  function logToConsole(speech) {
-    console.log("Speech Detected: " + speech);
-  }
+  /* -----------------------------------------------
+     Speech Utilities
+     ----------------------------------------------- */
 
   function speak(text, onComplete) {
-    if (!text) {
-      if (typeof onComplete === "function") {
-        onComplete();
-      }
-      return;
-    }
-
-    if (window.speechSynthesis && typeof window.SpeechSynthesisUtterance === "function") {
+    if (!text) { onComplete?.(); return; }
+    if (window.speechSynthesis && typeof SpeechSynthesisUtterance === "function") {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.onend = () => {
-        if (typeof onComplete === "function") {
-          onComplete();
-        }
-      };
-      utterance.onerror = () => {
-        if (typeof onComplete === "function") {
-          onComplete();
-        }
-      };
+      utterance.onend = () => onComplete?.();
+      utterance.onerror = () => onComplete?.();
       window.speechSynthesis.speak(utterance);
       return;
     }
+    onComplete?.();
+  }
 
-    if (typeof onComplete === "function") {
-      onComplete();
+  function sanitize(input) {
+    return typeof input === "string"
+      ? input.trim().replace(/^[\s,.;:!?-]+|[\s,.;:!?-]+$/g, "").replace(/\s+/g, " ")
+      : "";
+  }
+
+  function normalize(input) {
+    return typeof input === "string"
+      ? input.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim()
+      : "";
+  }
+
+  /* -----------------------------------------------
+     Configuration Loading
+     ----------------------------------------------- */
+
+  async function loadConfig(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to load ${url}: ${res.statusText}`);
+    return await res.json();
+  }
+
+  function resolvePhrases(config, path) {
+    let node = config;
+    for (const key of path) {
+      if (!node || typeof node !== "object") return [];
+      node = node[key];
+    }
+    return Array.isArray(node) ? node : [];
+  }
+
+  /* -----------------------------------------------
+     Command Registration
+     ----------------------------------------------- */
+
+  function buildCommandMap(phrases, handler) {
+    const sorted = [...phrases].sort((a, b) =>
+      b.replace(/\*/g, "").length - a.replace(/\*/g, "").length
+    );
+    const map = {};
+    sorted.forEach(p => { map[p] = handler; });
+    return map;
+  }
+
+  function registerBaseCommands() {
+    for (const [name, phrases] of Object.entries(commandPhrases)) {
+      annyang.addCommands(buildCommandMap(phrases, HANDLERS[name]));
     }
   }
 
-  function sanitizeVoiceObject(input) {
-    if (typeof input !== "string") {
-      return "";
+  function unregisterBaseCommands() {
+    for (const phrases of Object.values(commandPhrases)) {
+      if (phrases.length) annyang.removeCommands(phrases);
     }
-
-    return input
-      .trim()
-      .replace(/^[\s,.;:!?-]+|[\s,.;:!?-]+$/g, "")
-      .replace(/\s+/g, " ");
   }
 
-  function normalizeSpeech(input) {
-    if (typeof input !== "string") {
-      return "";
-    }
+  /* -----------------------------------------------
+     Page Interaction
+     ----------------------------------------------- */
 
-    return input
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
+  function clickElement(el) {
+    if (!el) return false;
+    el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    return true;
   }
 
-  function extractObjectFromFreeSpeech(phrase) {
-    const normalized = normalizeSpeech(phrase);
+  function scrollPage(direction) {
+    if (document.body.classList.contains("scroll-page") && window.scrollPageController?.scroll) {
+      window.scrollPageController.scroll(direction);
+      return;
+    }
+    const step = Math.max(180, Math.round(window.innerHeight * 0.7));
+    window.scrollBy({ top: direction * step, behavior: "smooth" });
+  }
 
-    const patterns = [
-      /^tell me more about\s+(.+)$/,
-      /^tell me about\s+(.+)$/,
-      /^what are\s+(.+)$/,
-      /^what(?:\s+is|\s+s)\s+(.+)$/
-    ];
+  function moveCarousel(direction) {
+    const itemArrow = document.querySelector(
+      direction < 0 ? ".item-carousel-arrow-left" : ".item-carousel-arrow-right"
+    );
+    if (itemArrow && !itemArrow.disabled && clickElement(itemArrow)) {
+      setTimeout(updateOverlayIfOpen, 360);
+      return;
+    }
 
-    for (const pattern of patterns) {
-      const match = normalized.match(pattern);
-      if (match && match[1]) {
-        return sanitizeVoiceObject(match[1]);
+    const arrows = document.querySelectorAll(".carousel .arrow");
+    if (arrows.length >= 2) {
+      const target = direction < 0 ? arrows[0] : arrows[arrows.length - 1];
+      if (target.getAttribute("aria-disabled") !== "true" && clickElement(target)) return;
+    }
+
+    speak("There is no carousel movement available right now.");
+  }
+
+  /* -----------------------------------------------
+     Read Current Item
+     ----------------------------------------------- */
+
+  function readCurrentItem() {
+    const panel = document.querySelector(".item-panel");
+    const title = panel?.querySelector("h2")?.textContent?.trim();
+    const desc = panel?.querySelector("p")?.textContent?.trim();
+    if (title && desc) { speak(`Title: ${title}. Description: ${desc}`); return; }
+
+    const bannerTitle = document.querySelector(".banner h2")?.textContent?.trim();
+    const bannerDesc = document.querySelector(".banner span")?.textContent?.trim();
+    if (bannerTitle && bannerDesc) { speak(`Title: ${bannerTitle}. Description: ${bannerDesc}`); return; }
+
+    speak("I could not find an item to read on this page.");
+  }
+
+  /* -----------------------------------------------
+     Item Image Overlay
+     ----------------------------------------------- */
+
+  function extractBgUrl(value) {
+    if (typeof value !== "string") return "";
+    const matches = [...value.matchAll(/url\((['"]?)(.*?)\1\)/g)];
+    return matches.length ? (matches[matches.length - 1][2] || "") : "";
+  }
+
+  function getOverlayImageUrl() {
+    const slots = Array.from(
+      document.querySelectorAll(".item-page .circle-carousel-track .circle-item")
+    );
+    if (slots.length) {
+      let bestSlot = slots[0], bestScale = -Infinity;
+      for (const slot of slots) {
+        const raw = slot.style.getPropertyValue("--slot-scale")
+          || getComputedStyle(slot).getPropertyValue("--slot-scale");
+        const scale = parseFloat(raw) || 1;
+        if (scale > bestScale) { bestScale = scale; bestSlot = slot; }
       }
+      const imgDiv = bestSlot.querySelector(".circle-item-image");
+      if (imgDiv) {
+        const url = extractBgUrl(imgDiv.style.backgroundImage || getComputedStyle(imgDiv).backgroundImage);
+        if (url) return url;
+      }
+    }
+
+    for (const node of document.querySelectorAll(".item-page .circle-carousel-track .circle-item-image")) {
+      const url = extractBgUrl(node.style.backgroundImage || getComputedStyle(node).backgroundImage);
+      if (url) return url;
     }
 
     return "";
   }
 
-  function getRecordTitle(record) {
-    if (record?._primaryTitle?.trim()) {
-      return record._primaryTitle.trim();
-    }
-
-    if (Array.isArray(record?.titles) && record.titles[0]?.title?.trim()) {
-      return record.titles[0].title.trim();
-    }
-
-    if (record?.objectType?.trim()) {
-      return record.objectType.trim();
-    }
-
-    return "Untitled object";
-  }
-
-  function getRecordSubtitle(record) {
-    const maker = record?._primaryMaker?.name?.trim();
-    const date = record?._primaryDate?.trim();
-
-    if (maker && date) {
-      return `${maker}, ${date}`;
-    }
-
-    if (maker) {
-      return maker;
-    }
-
-    if (date) {
-      return date;
-    }
-
-    return "";
-  }
-
-  function buildClarificationOption(record, index) {
-    const title = getRecordTitle(record);
-    const subtitle = getRecordSubtitle(record);
-    const label = subtitle ? `${title} by ${subtitle}` : title;
-
-    return {
-      index,
-      systemNumber: record?.systemNumber,
-      title,
-      normalizedTitle: normalizeSpeech(title),
-      label
-    };
-  }
-
-  function removeCommands(phrases) {
-    if (!Array.isArray(phrases) || !phrases.length) {
+  function closeItemOverlay(announce = true) {
+    if (!overlayElement) {
+      if (announce) speak("There is no open image overlay.");
       return;
     }
-
-    annyang.removeCommands(phrases);
+    overlayElement.remove();
+    overlayElement = null;
+    if (announce) speak("Closed image overlay.");
   }
 
-  function addBaseCommands() {
-    annyang.addCommands(
-      createCommands(baseCommandGroups.home, () => window.location.replace("/index.html"))
-    );
-
-    annyang.addCommands(
-      createCommands(baseCommandGroups.help, () => window.location.replace("/pages/help.html"))
-    );
-
-    annyang.addCommands(
-      createCommands(baseCommandGroups.cancel, () => {
-        cancelCurrentAction();
-      })
-    );
-
-    annyang.addCommands(
-      createCommands(baseCommandGroups.carouselLeft, () => {
-        moveOnScreenCarousel(-1);
-      })
-    );
-
-    annyang.addCommands(
-      createCommands(baseCommandGroups.carouselRight, () => {
-        moveOnScreenCarousel(1);
-      })
-    );
-
-    annyang.addCommands(
-      createCommands(baseCommandGroups.scrollUp, () => {
-        scrollPage(-1);
-      })
-    );
-
-    annyang.addCommands(
-      createCommands(baseCommandGroups.scrollDown, () => {
-        scrollPage(1);
-      })
-    );
-
-    annyang.addCommands(
-      createCommands(baseCommandGroups.readCurrentItem, () => {
-        readCurrentItemOnPage();
-      })
-    );
-
-    annyang.addCommands(
-      createCommands(baseCommandGroups.openCurrentItemOverlay, () => {
-        openCurrentItemOverlay();
-      })
-    );
-
-    annyang.addCommands(
-      createCommands(baseCommandGroups.closeItemOverlay, () => {
-        closeItemOverlay();
-      })
-    );
-
-    annyang.addCommands(
-      createCommands(baseCommandGroups.search, (search) =>
-        window.location.replace("/pages/scroll.html?q=" + encodeURIComponent(search || ""))
-      )
-    );
-
-    annyang.addCommands(
-      createCommands(baseCommandGroups.openItemOnPage, (objectName) => {
-        openItemFromCurrentPage(objectName);
-      })
-    );
-
-    annyang.addCommands(
-      createCommands(baseCommandGroups.objectExplanation, (objectName) =>
-        explainObjectWithDisambiguation(objectName)
-      )
-    );
-  }
-
-  function suspendBaseCommands() {
-    removeCommands(baseCommandGroups.home);
-    removeCommands(baseCommandGroups.help);
-    removeCommands(baseCommandGroups.cancel);
-    removeCommands(baseCommandGroups.carouselLeft);
-    removeCommands(baseCommandGroups.carouselRight);
-    removeCommands(baseCommandGroups.scrollUp);
-    removeCommands(baseCommandGroups.scrollDown);
-    removeCommands(baseCommandGroups.readCurrentItem);
-    removeCommands(baseCommandGroups.openCurrentItemOverlay);
-    removeCommands(baseCommandGroups.closeItemOverlay);
-    removeCommands(baseCommandGroups.search);
-    removeCommands(baseCommandGroups.openItemOnPage);
-    removeCommands(baseCommandGroups.objectExplanation);
-  }
-
-  function extractImageUrlFromCssBackground(backgroundValue) {
-    if (typeof backgroundValue !== "string") {
-      return "";
-    }
-
-    const urlMatches = [...backgroundValue.matchAll(/url\((['"]?)(.*?)\1\)/g)];
-    if (!urlMatches.length) {
-      return "";
-    }
-
-    const lastMatch = urlMatches[urlMatches.length - 1];
-    return (lastMatch && lastMatch[2]) ? lastMatch[2] : "";
-  }
-
-  function getCurrentCarouselSlotOnItemPage() {
-    const slots = Array.from(document.querySelectorAll(".item-page .circle-carousel-track .circle-item"));
-    if (!slots.length) {
-      return null;
-    }
-
-    let bestSlot = slots[0];
-    let bestScale = Number.NEGATIVE_INFINITY;
-
-    slots.forEach((slot) => {
-      const rawScale = slot.style.getPropertyValue("--slot-scale") || getComputedStyle(slot).getPropertyValue("--slot-scale");
-      const parsedScale = Number.parseFloat(rawScale || "1");
-      const scale = Number.isFinite(parsedScale) ? parsedScale : 1;
-
-      if (scale > bestScale) {
-        bestScale = scale;
-        bestSlot = slot;
-      }
-    });
-
-    return bestSlot;
-  }
-
-  function buildCurrentItemOverlayData() {
-    const currentSlot = getCurrentCarouselSlotOnItemPage();
-    const imageDiv = currentSlot?.querySelector(".circle-item-image");
-
-    if (!imageDiv) {
-      return null;
-    }
-
-    const backgroundImage = imageDiv.style.backgroundImage || getComputedStyle(imageDiv).backgroundImage;
-    const imageUrl = extractImageUrlFromCssBackground(backgroundImage);
-
-    if (!imageUrl) {
-      return null;
-    }
-
-    const title = document.querySelector(".item-page .item-panel h2")?.textContent?.trim() || "Current item";
-    const description = document.querySelector(".item-page .item-panel p")?.textContent?.trim() || "";
-
-    return {
-      imageUrl,
-      title,
-      description
-    };
-  }
-
-  function closeItemOverlay(shouldSpeak = true) {
-    if (!itemImageOverlayElement) {
-      if (shouldSpeak) {
-        speak("There is no open image overlay.");
-      }
-      return;
-    }
-
-    itemImageOverlayElement.remove();
-    itemImageOverlayElement = null;
-
-    if (shouldSpeak) {
-      speak("Closed image overlay.");
-    }
-  }
-
-  function openCurrentItemOverlay() {
-    const overlayData = buildCurrentItemOverlayData();
-    if (!overlayData) {
-      speak("I could not find the current item image to open.");
-      return;
-    }
+  function openItemOverlay() {
+    const imageUrl = getOverlayImageUrl();
+    if (!imageUrl) { speak("I could not find the current item image to open."); return; }
 
     closeItemOverlay(false);
+
+    const title = document.querySelector(".item-page .item-panel h2")?.textContent?.trim() || "Current item";
 
     const overlay = document.createElement("div");
     overlay.className = "item-image-overlay";
@@ -399,639 +235,378 @@ if (!window.voiceCommandsInitialized) {
     const panel = document.createElement("div");
     panel.className = "item-image-overlay-panel";
 
-    const closeButton = document.createElement("button");
-    closeButton.type = "button";
-    closeButton.className = "item-image-overlay-close";
-    closeButton.textContent = "Close";
-    closeButton.addEventListener("click", () => closeItemOverlay(false));
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "item-image-overlay-close";
+    btn.textContent = "Close";
+    btn.addEventListener("click", () => closeItemOverlay(false));
 
-    const image = document.createElement("img");
-    image.className = "item-image-overlay-image";
-    image.src = overlayData.imageUrl;
-    image.alt = overlayData.title;
+    const img = document.createElement("img");
+    img.className = "item-image-overlay-image";
+    img.src = imageUrl;
+    img.alt = title;
 
-    panel.append(closeButton, image);
+    panel.append(btn, img);
     overlay.appendChild(panel);
-
-    overlay.addEventListener("click", (event) => {
-      if (event.target === overlay) {
-        closeItemOverlay(false);
-      }
-    });
+    overlay.addEventListener("click", e => { if (e.target === overlay) closeItemOverlay(false); });
 
     document.body.appendChild(overlay);
-    itemImageOverlayElement = overlay;
-    speak(`Opened image for ${overlayData.title}`);
+    overlayElement = overlay;
+    speak(`Opened image for ${title}`);
   }
 
-  function updateItemOverlayIfOpen() {
-    if (!itemImageOverlayElement) {
-      return;
-    }
-
-    const overlayData = buildCurrentItemOverlayData();
-    if (!overlayData) {
-      return;
-    }
-
-    const image = itemImageOverlayElement.querySelector(".item-image-overlay-image");
-    if (image) {
-      image.src = overlayData.imageUrl;
-      image.alt = overlayData.title;
+  function updateOverlayIfOpen() {
+    if (!overlayElement) return;
+    const url = getOverlayImageUrl();
+    if (!url) return;
+    const img = overlayElement.querySelector(".item-image-overlay-image");
+    if (img) {
+      img.src = url;
+      img.alt = document.querySelector(".item-page .item-panel h2")?.textContent?.trim() || "Current item";
     }
   }
 
-  function readCurrentItemOnPage() {
-    const itemPanel = document.querySelector(".item-panel");
-    const itemTitle = itemPanel?.querySelector("h2")?.textContent?.trim();
-    const itemDescription = itemPanel?.querySelector("p")?.textContent?.trim();
+  /* -----------------------------------------------
+     Clarification System
+     ----------------------------------------------- */
 
-    if (itemTitle && itemDescription) {
-      speak(`Title: ${itemTitle}. Description: ${itemDescription}`);
-      return;
-    }
+  function parseChoiceIndex(raw, options) {
+    const text = normalize(raw);
+    if (!text) return -1;
+    if (text.includes("cancel") || text.includes("never mind")) return -2;
 
-    const bannerTitle = document.querySelector(".banner h2")?.textContent?.trim();
-    const bannerDescription = document.querySelector(".banner span")?.textContent?.trim();
-    if (bannerTitle && bannerDescription) {
-      speak(`Title: ${bannerTitle}. Description: ${bannerDescription}`);
-      return;
-    }
-
-    speak("I could not find an item to read on this page.");
-  }
-
-  function buildItemLinkCandidates() {
-    const itemLinkPattern = /\/item\.html(?:\?|$)/i;
-
-    return Array.from(document.querySelectorAll("a[href]")).map((anchor) => {
-      const href = anchor.getAttribute("href") || "";
-      const fullHref = anchor.href || "";
-      const isItemLink = itemLinkPattern.test(href) || itemLinkPattern.test(fullHref);
-
-      if (!isItemLink) {
-        return null;
-      }
-
-      const labelNode = anchor.querySelector("span, h2, figcaption");
-      const rawLabel = (labelNode?.textContent || anchor.getAttribute("aria-label") || anchor.textContent || "").trim();
-      const normalizedLabel = normalizeSpeech(rawLabel);
-
-      return {
-        anchor,
-        href: fullHref,
-        label: rawLabel,
-        normalizedLabel
-      };
-    }).filter(Boolean);
-  }
-
-  function getOverlayHost(anchor) {
-    return anchor.querySelector(".image-card, .circle-item-image") || anchor;
-  }
-
-  function renderChoiceOverlays(candidates) {
-    const overlayNodes = [];
-
-    candidates.forEach((candidate, index) => {
-      const host = getOverlayHost(candidate.anchor);
-      if (!host) {
-        return;
-      }
-
-      host.classList.add("voice-choice-overlay-host");
-      const badge = document.createElement("div");
-      badge.className = "voice-choice-overlay";
-      badge.textContent = String(index + 1);
-      host.appendChild(badge);
-      overlayNodes.push({ host, badge });
-    });
-
-    return () => {
-      overlayNodes.forEach(({ host, badge }) => {
-        if (badge.parentNode === host) {
-          host.removeChild(badge);
-        }
-
-        if (!host.querySelector(".voice-choice-overlay")) {
-          host.classList.remove("voice-choice-overlay-host");
-        }
-      });
-    };
-  }
-
-  function askForOnPageItemChoice(candidates, spokenObjectName) {
-    suspendBaseCommands();
-    const clarificationToken = clarificationTokenCounter + 1;
-    clarificationTokenCounter = clarificationToken;
-
-    const cleanupOverlays = renderChoiceOverlays(candidates);
-    const numberedChoices = candidates.map((candidate, index) => {
-      return {
-        index,
-        href: candidate.href,
-        title: candidate.label || `option ${index + 1}`
-      };
-    });
-
-    const clarificationCommands = {
-      "cancel": () => {
-        speak("Okay, cancelled.");
-        exitClarificationMode();
-      },
-      "never mind": () => {
-        speak("Okay, cancelled.");
-        exitClarificationMode();
-      },
-      "*choice": (choice) => {
-        const selectedIndex = parseChoiceIndex(choice, numberedChoices);
-
-        if (selectedIndex === -2) {
-          speak("Okay, cancelled.");
-          exitClarificationMode();
-          return;
-        }
-
-        if (selectedIndex >= 0) {
-          const selected = numberedChoices[selectedIndex];
-          if (selected?.href) {
-            speak(`Opening ${selected.title}`);
-            window.location.replace(selected.href);
-            return;
-          }
-        }
-
-        speak(`Please say a number between one and ${numberedChoices.length}, or say cancel.`);
-      }
-    };
-
-    numberedChoices.forEach((choice) => {
-      const number = choice.index + 1;
-      clarificationCommands[String(number)] = () => {
-        speak(`Opening ${choice.title}`);
-        window.location.replace(choice.href);
-      };
-
-      clarificationCommands[`option ${number}`] = clarificationCommands[String(number)];
-
-      if (ORDINAL_WORDS[choice.index]) {
-        clarificationCommands[ORDINAL_WORDS[choice.index]] = clarificationCommands[String(number)];
-      }
-    });
-
-    const clarificationPhrases = Object.keys(clarificationCommands);
-    annyang.addCommands(clarificationCommands);
-
-    clarificationState = {
-      phrases: clarificationPhrases,
-      token: clarificationToken,
-      timeoutId: null,
-      cleanup: cleanupOverlays
-    };
-
-    const shortList = numberedChoices
-      .slice(0, 4)
-      .map((choice) => `${choice.index + 1}: ${choice.title}`)
-      .join(". ");
-
-    const summary = numberedChoices.length > 4
-      ? `${shortList}. and ${numberedChoices.length - 4} more.`
-      : shortList;
-
-    speak(
-      `I found ${numberedChoices.length} exact matches for ${spokenObjectName}. Say the number you want to open. ${summary}`,
-      () => {
-        if (!clarificationState || clarificationState.token !== clarificationToken) {
-          return;
-        }
-
-        clarificationState.timeoutId = window.setTimeout(() => {
-          speak("Selection timed out. Please try again.");
-          exitClarificationMode();
-        }, CLARIFICATION_TIMEOUT_MS);
-      }
-    );
-  }
-
-  function openItemFromCurrentPage(rawObjectName) {
-    const objectName = sanitizeVoiceObject(rawObjectName);
-    const normalizedObjectName = normalizeSpeech(objectName);
-
-    if (!normalizedObjectName) {
-      speak("Please say the item name you want to open.");
-      return;
-    }
-
-    const candidates = buildItemLinkCandidates();
-    if (!candidates.length) {
-      speak("I could not find any item links on this page.");
-      return;
-    }
-
-    const exactMatches = candidates.filter((candidate) => {
-      return candidate.normalizedLabel === normalizedObjectName;
-    });
-
-    if (exactMatches.length === 1 && exactMatches[0].href) {
-      const exactLabel = exactMatches[0].label || objectName;
-      speak(`Opening ${exactLabel}`);
-      window.location.replace(exactMatches[0].href);
-      return;
-    }
-
-    if (exactMatches.length > 1) {
-      askForOnPageItemChoice(exactMatches, objectName);
-      return;
-    }
-
-    const startsWithMatches = candidates.filter((candidate) => candidate.normalizedLabel.startsWith(normalizedObjectName));
-    const includesMatches = candidates.filter((candidate) => candidate.normalizedLabel.includes(normalizedObjectName));
-    const bestMatch = startsWithMatches[0] || includesMatches[0];
-
-    if (!bestMatch || !bestMatch.href) {
-      speak(`I could not find ${objectName} on this page.`);
-      return;
-    }
-
-    const label = bestMatch.label || objectName;
-    speak(`Opening ${label}`);
-    window.location.replace(bestMatch.href);
-  }
-
-  function scrollPage(direction) {
-    if (document.body.classList.contains("scroll-page") && window.scrollPageController && typeof window.scrollPageController.scroll === "function") {
-      window.scrollPageController.scroll(direction);
-      return;
-    }
-
-    const viewportStep = Math.max(180, Math.round(window.innerHeight * 0.7));
-    window.scrollBy({
-      top: direction < 0 ? -viewportStep : viewportStep,
-      behavior: "smooth"
-    });
-  }
-
-  function triggerClick(element) {
-    if (!element) {
-      return false;
-    }
-
-    element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    return true;
-  }
-
-  function moveOnScreenCarousel(direction) {
-    const itemArrowSelector = direction < 0 ? ".item-carousel-arrow-left" : ".item-carousel-arrow-right";
-    const itemArrow = document.querySelector(itemArrowSelector);
-
-    if (itemArrow && !itemArrow.disabled) {
-      if (triggerClick(itemArrow)) {
-        // Update overlay image if it's open, after carousel animation
-        setTimeout(updateItemOverlayIfOpen, 360);
-        return;
-      }
-    }
-
-    const standardCarousel = document.querySelector(".carousel");
-    if (standardCarousel) {
-      const arrows = standardCarousel.querySelectorAll(".arrow");
-      if (arrows.length >= 2) {
-        const targetArrow = direction < 0 ? arrows[0] : arrows[arrows.length - 1];
-        const isDisabled = targetArrow.getAttribute("aria-disabled") === "true";
-
-        if (!isDisabled && triggerClick(targetArrow)) {
-          return;
-        }
-      }
-    }
-
-    speak("There is no carousel movement available right now.");
-  }
-
-  function cancelCurrentAction() {
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-
-    if (itemImageOverlayElement) {
-      closeItemOverlay(false);
-    }
-
-    if (clarificationState) {
-      exitClarificationMode();
-      speak("Okay, cancelled.");
-      return;
-    }
-
-    speak("Stopped.");
-  }
-
-  function clearClarificationState() {
-    if (!clarificationState) {
-      return;
-    }
-
-    if (clarificationState.timeoutId) {
-      window.clearTimeout(clarificationState.timeoutId);
-    }
-
-    if (typeof clarificationState.cleanup === "function") {
-      clarificationState.cleanup();
-    }
-
-    removeCommands(clarificationState.phrases);
-    clarificationState = null;
-  }
-
-  function exitClarificationMode() {
-    clearClarificationState();
-    addBaseCommands();
-  }
-
-  function chooseClarifiedOption(option) {
-    if (!option?.systemNumber) {
-      speak("That option is missing an item identifier. Please try again.");
-      exitClarificationMode();
-      return;
-    }
-
-    speak(`Opening ${option.title}`);
-    window.location.replace(
-      `/pages/item.html?id=${encodeURIComponent(option.systemNumber)}&voiceExplain=1`
-    );
-  }
-
-  function parseChoiceIndex(choice, options) {
-    const normalizedChoice = normalizeSpeech(choice);
-
-    if (!normalizedChoice) {
-      return -1;
-    }
-
-    if (normalizedChoice.includes("cancel") || normalizedChoice.includes("never mind")) {
-      return -2;
-    }
-
-    const digitMatch = normalizedChoice.match(/\b([1-9])\b/);
+    const digitMatch = text.match(/\b([1-9])\b/);
     if (digitMatch) {
-      const numericIndex = Number(digitMatch[1]) - 1;
-      return numericIndex < options.length ? numericIndex : -1;
+      const i = Number(digitMatch[1]) - 1;
+      return i < options.length ? i : -1;
     }
 
-    const tokens = normalizedChoice.split(" ").filter(Boolean);
-    const cardinalIndex = tokens.find((token) => CARDINAL_TO_INDEX[token] !== undefined);
-    if (cardinalIndex) {
-      const mappedIndex = CARDINAL_TO_INDEX[cardinalIndex];
-      return mappedIndex < options.length ? mappedIndex : -1;
+    for (const token of text.split(" ")) {
+      if (CARDINAL_TO_INDEX[token] !== undefined) {
+        const i = CARDINAL_TO_INDEX[token];
+        return i < options.length ? i : -1;
+      }
     }
 
-    const wordIndex = ORDINAL_WORDS.findIndex((word) => normalizedChoice.includes(word));
-    if (wordIndex >= 0 && wordIndex < options.length) {
-      return wordIndex;
-    }
+    const ordIdx = ORDINAL_WORDS.findIndex(w => text.includes(w));
+    if (ordIdx >= 0 && ordIdx < options.length) return ordIdx;
 
-    const titleIndex = options.findIndex((option) => {
-      return option.normalizedTitle && normalizedChoice.includes(option.normalizedTitle);
-    });
-
-    return titleIndex;
+    return options.findIndex(o => o.normalizedTitle && text.includes(o.normalizedTitle));
   }
 
-  function askForClarification(options, originalQuery) {
-    suspendBaseCommands();
-    const clarificationToken = clarificationTokenCounter + 1;
-    clarificationTokenCounter = clarificationToken;
+  function endClarification() {
+    if (clarificationState) {
+      if (clarificationState.timeoutId) clearTimeout(clarificationState.timeoutId);
+      if (typeof clarificationState.cleanup === "function") clarificationState.cleanup();
+      annyang.removeCommands(clarificationState.phrases);
+      clarificationState = null;
+    }
+    registerBaseCommands();
+  }
 
-    const clarificationCommands = {
-      "cancel": () => {
-        speak("Okay, cancelled.");
-        exitClarificationMode();
-      },
-      "never mind": () => {
-        speak("Okay, cancelled.");
-        exitClarificationMode();
-      },
+  function startClarification({ choices, onSelect, prompt, cleanup }) {
+    unregisterBaseCommands();
+    const token = ++clarificationToken;
+
+    const commands = {
+      "cancel": () => { speak("Okay, cancelled."); endClarification(); },
+      "never mind": () => { speak("Okay, cancelled."); endClarification(); },
       "*choice": (choice) => {
-        const selectedIndex = parseChoiceIndex(choice, options);
-
-        if (selectedIndex === -2) {
-          speak("Okay, cancelled.");
-          exitClarificationMode();
-          return;
-        }
-
-        if (selectedIndex >= 0) {
-          chooseClarifiedOption(options[selectedIndex]);
-          return;
-        }
-
-        speak("I did not catch that. Please say first, second, third, or cancel.");
+        const idx = parseChoiceIndex(choice, choices);
+        if (idx === -2) { speak("Okay, cancelled."); endClarification(); return; }
+        if (idx >= 0) { onSelect(choices[idx]); return; }
+        speak(`Please say a number between one and ${choices.length}, or say cancel.`);
       }
     };
 
-    options.forEach((option, index) => {
-      const ordinalWord = ORDINAL_WORDS[index];
-      const optionWord = ["one", "two", "three"][index];
-
-      if (!ordinalWord || !optionWord) {
-        return;
+    choices.forEach((choice, i) => {
+      const num = i + 1;
+      commands[String(num)] = () => onSelect(choice);
+      commands[`option ${num}`] = () => onSelect(choice);
+      if (ORDINAL_WORDS[i]) {
+        commands[ORDINAL_WORDS[i]] = () => onSelect(choice);
+        commands[`${ORDINAL_WORDS[i]} one`] = () => onSelect(choice);
+        commands[`${ORDINAL_WORDS[i]} option`] = () => onSelect(choice);
       }
-
-      clarificationCommands[ordinalWord] = () => chooseClarifiedOption(option);
-      clarificationCommands[`${ordinalWord} one`] = () => chooseClarifiedOption(option);
-      clarificationCommands[`${ordinalWord} option`] = () => chooseClarifiedOption(option);
-      clarificationCommands[`option ${optionWord}`] = () => chooseClarifiedOption(option);
+      const word = ["one", "two", "three"][i];
+      if (word) commands[`option ${word}`] = () => onSelect(choice);
     });
 
-    const clarificationPhrases = Object.keys(clarificationCommands);
-    annyang.addCommands(clarificationCommands);
+    const phrases = Object.keys(commands);
+    annyang.addCommands(commands);
 
-    const optionList = options
-      .map((option, idx) => `${ORDINAL_WORDS[idx]}: ${option.label}`)
-      .join(". ");
+    clarificationState = { phrases, token, timeoutId: null, cleanup: cleanup || null };
 
-    clarificationState = {
-      phrases: clarificationPhrases,
-      token: clarificationToken,
-      timeoutId: null
-    };
-
-    speak(`I found multiple matches for ${originalQuery}. Say first, second, or third. ${optionList}`, () => {
-      if (!clarificationState || clarificationState.token !== clarificationToken) {
-        return;
-      }
-
-      clarificationState.timeoutId = window.setTimeout(() => {
-        speak("Clarification timed out. Please ask again.");
-        exitClarificationMode();
+    speak(prompt, () => {
+      if (!clarificationState || clarificationState.token !== token) return;
+      clarificationState.timeoutId = setTimeout(() => {
+        speak("Selection timed out. Please try again.");
+        endClarification();
       }, CLARIFICATION_TIMEOUT_MS);
     });
   }
 
-  async function explainObjectWithDisambiguation(rawObjectName) {
-    const objectName = sanitizeVoiceObject(rawObjectName);
+  /* -----------------------------------------------
+     On-Page Item Navigation
+     ----------------------------------------------- */
 
-    if (!objectName) {
-      speak("Please tell me which object you want to learn about.");
-      return;
-    }
-
-    if (typeof getData !== "function" || typeof searchURL !== "string") {
-      // Fallback on pages where API helpers are not loaded.
-      window.location.replace("/pages/scroll.html?q=" + encodeURIComponent(objectName));
-      return;
-    }
-
-    const query = `${encodeURIComponent(objectName)}&page_size=3`;
-    const data = await getData(searchURL, query);
-    const records = Array.isArray(data?.records) ? data.records : [];
-
-    if (!records.length) {
-      speak(`I could not find anything for ${objectName}.`);
-      return;
-    }
-
-    const options = records
-      .filter((record) => record?.systemNumber)
-      .slice(0, 3)
-      .map((record, index) => buildClarificationOption(record, index));
-
-    if (!options.length) {
-      speak(`I found results for ${objectName}, but could not open them.`);
-      return;
-    }
-
-    if (options.length === 1) {
-      chooseClarifiedOption(options[0]);
-      return;
-    }
-
-    askForClarification(options, objectName);
+  function buildItemLinkCandidates() {
+    const pattern = /\/item\.html(?:\?|$)/i;
+    return Array.from(document.querySelectorAll("a[href]"))
+      .map(anchor => {
+        const href = anchor.getAttribute("href") || "";
+        const fullHref = anchor.href || "";
+        if (!pattern.test(href) && !pattern.test(fullHref)) return null;
+        const labelNode = anchor.querySelector("span, h2, figcaption");
+        const label = (labelNode?.textContent || anchor.getAttribute("aria-label") || anchor.textContent || "").trim();
+        return { anchor, href: fullHref, label, normalizedTitle: normalize(label) };
+      })
+      .filter(Boolean);
   }
 
-  // Register commands and speech callbacks, then start listening.
-  async function initializeVoiceCommands() {
-    const homePhrases = await getCommandsFromJson(
-      "/commands.json",
-      ["directCommands", "navigation", "home"]
-    );
-
-    const helpPhrases = await getCommandsFromJson(
-      "/commands.json",
-      ["directCommands", "navigation", "help"]
-    );
-
-    const cancelPhrases = await getCommandsFromJson(
-      "/commands.json",
-      ["directCommands", "pageCommands", "cancel"]
-    );
-
-    const carouselLeftPhrases = await getCommandsFromJson(
-      "/commands.json",
-      ["directCommands", "pageCommands", "carouselLeft"]
-    );
-
-    const carouselRightPhrases = await getCommandsFromJson(
-      "/commands.json",
-      ["directCommands", "pageCommands", "carouselRight"]
-    );
-
-    const scrollUpPhrases = await getCommandsFromJson(
-      "/commands.json",
-      ["directCommands", "pageCommands", "scrollUp"]
-    );
-
-    const scrollDownPhrases = await getCommandsFromJson(
-      "/commands.json",
-      ["directCommands", "pageCommands", "scrollDown"]
-    );
-
-    const readCurrentItemPhrases = await getCommandsFromJson(
-      "/commands.json",
-      ["directCommands", "pageCommands", "readCurrentItem"]
-    );
-
-    const openCurrentItemOverlayPhrases = await getCommandsFromJson(
-      "/commands.json",
-      ["directCommands", "pageCommands", "openCurrentItemOverlay"]
-    );
-
-    const closeItemOverlayPhrases = await getCommandsFromJson(
-      "/commands.json",
-      ["directCommands", "pageCommands", "closeItemOverlay"]
-    );
-
-    const searchPhrases = await getCommandsFromJson(
-      "/commands.json",
-      ["parameterizedCommands", "navigation", "search"]
-    );
-
-    const openItemOnPagePhrases = await getCommandsFromJson(
-      "/commands.json",
-      ["parameterizedCommands", "navigation", "openItemOnPage"]
-    );
-
-    const objectExplanationPhrases = await getCommandsFromJson(
-      "/commands.json",
-      ["disambiguatedParameterizedCommands", "objectExplanation"]
-    );
-
-    baseCommandGroups = {
-      home: homePhrases,
-      help: helpPhrases,
-      cancel: cancelPhrases,
-      carouselLeft: carouselLeftPhrases,
-      carouselRight: carouselRightPhrases,
-      scrollUp: scrollUpPhrases,
-      scrollDown: scrollDownPhrases,
-      readCurrentItem: readCurrentItemPhrases,
-      openCurrentItemOverlay: openCurrentItemOverlayPhrases,
-      closeItemOverlay: closeItemOverlayPhrases,
-      search: searchPhrases,
-      openItemOnPage: openItemOnPagePhrases,
-      objectExplanation: objectExplanationPhrases
+  function renderChoiceOverlays(candidates) {
+    const nodes = [];
+    candidates.forEach((c, i) => {
+      const host = c.anchor.querySelector(".image-card, .circle-item-image") || c.anchor;
+      host.classList.add("voice-choice-overlay-host");
+      const badge = document.createElement("div");
+      badge.className = "voice-choice-overlay";
+      badge.textContent = String(i + 1);
+      host.appendChild(badge);
+      nodes.push({ host, badge });
+    });
+    return () => {
+      nodes.forEach(({ host, badge }) => {
+        if (badge.parentNode === host) host.removeChild(badge);
+        if (!host.querySelector(".voice-choice-overlay")) host.classList.remove("voice-choice-overlay-host");
+      });
     };
+  }
 
-    addBaseCommands();
+  function openItemFromPage(rawName) {
+    const name = sanitize(rawName);
+    const normalizedName = normalize(name);
+    if (!normalizedName) { speak("Please say the item name you want to open."); return; }
 
-    annyang.addCallback("result", (phrases) => {
-      if (phrases.length > 0) {
-        logToConsole(phrases[0]);
-      }
+    const candidates = buildItemLinkCandidates();
+    if (!candidates.length) { speak("I could not find any item links on this page."); return; }
+
+    const exact = candidates.filter(c => c.normalizedTitle === normalizedName);
+    if (exact.length === 1 && exact[0].href) {
+      speak(`Opening ${exact[0].label || name}`);
+      window.location.replace(exact[0].href);
+      return;
+    }
+
+    if (exact.length > 1) {
+      const cleanup = renderChoiceOverlays(exact);
+      const summary = exact.slice(0, 4).map((c, i) => `${i + 1}: ${c.label}`).join(". ");
+      const extra = exact.length > 4 ? ` and ${exact.length - 4} more.` : "";
+      startClarification({
+        choices: exact,
+        onSelect: c => { speak(`Opening ${c.label}`); window.location.replace(c.href); },
+        prompt: `I found ${exact.length} exact matches for ${name}. Say the number you want to open. ${summary}${extra}`,
+        cleanup
+      });
+      return;
+    }
+
+    const best = candidates.find(c => c.normalizedTitle.startsWith(normalizedName))
+      || candidates.find(c => c.normalizedTitle.includes(normalizedName));
+    if (best?.href) {
+      speak(`Opening ${best.label || name}`);
+      window.location.replace(best.href);
+    } else {
+      speak(`I could not find ${name} on this page.`);
+    }
+  }
+
+  /* -----------------------------------------------
+     API Object Explanation with Disambiguation
+     ----------------------------------------------- */
+
+  function getRecordTitle(r) {
+    return r?._primaryTitle?.trim()
+      || r?.titles?.[0]?.title?.trim()
+      || r?.objectType?.trim()
+      || "Untitled object";
+  }
+
+  function getRecordSubtitle(r) {
+    const maker = r?._primaryMaker?.name?.trim();
+    const date = r?._primaryDate?.trim();
+    if (maker && date) return `${maker}, ${date}`;
+    return maker || date || "";
+  }
+
+  function buildClarificationChoice(record, index) {
+    const title = getRecordTitle(record);
+    const subtitle = getRecordSubtitle(record);
+    return {
+      index,
+      systemNumber: record?.systemNumber,
+      title,
+      normalizedTitle: normalize(title),
+      label: subtitle ? `${title} by ${subtitle}` : title
+    };
+  }
+
+  function navigateToItem(choice) {
+    if (!choice?.systemNumber) {
+      speak("That option is missing an item identifier. Please try again.");
+      endClarification();
+      return;
+    }
+    speak(`Opening ${choice.title}`);
+    window.location.replace(
+      `/pages/item.html?id=${encodeURIComponent(choice.systemNumber)}&voiceExplain=1`
+    );
+  }
+
+  async function explainWithDisambiguation(rawName) {
+    const name = sanitize(rawName);
+    if (!name) { speak("Please tell me which object you want to learn about."); return; }
+
+    if (typeof getData !== "function" || typeof searchURL !== "string") {
+      window.location.replace("/pages/scroll.html?q=" + encodeURIComponent(name));
+      return;
+    }
+
+    const data = await getData(searchURL, `${encodeURIComponent(name)}&page_size=3`);
+    const records = (data?.records || []).filter(r => r?.systemNumber).slice(0, 3);
+    if (!records.length) { speak(`I could not find anything for ${name}.`); return; }
+
+    const choices = records.map(buildClarificationChoice);
+    if (choices.length === 1) { navigateToItem(choices[0]); return; }
+
+    const optionList = choices.map((c, i) => `${ORDINAL_WORDS[i]}: ${c.label}`).join(". ");
+    startClarification({
+      choices,
+      onSelect: navigateToItem,
+      prompt: `I found multiple matches for ${name}. Say first, second, or third. ${optionList}`
+    });
+  }
+
+  /* -----------------------------------------------
+     Creator Collection
+     ----------------------------------------------- */
+
+  function openCreatorCollection(rawName) {
+    const name = sanitize(rawName);
+    if (!name) { speak("Please say the creator whose collection you want to open."); return; }
+    window.location.replace("/pages/collection.html?creator=" + encodeURIComponent(name));
+  }
+
+  /* -----------------------------------------------
+     Cancel
+     ----------------------------------------------- */
+
+  function cancelCurrentAction() {
+    window.speechSynthesis?.cancel();
+    if (overlayElement) closeItemOverlay(false);
+    if (clarificationState) { endClarification(); speak("Okay, cancelled."); return; }
+    speak("Stopped.");
+  }
+
+  /* -----------------------------------------------
+     No-Match Fallback
+     ----------------------------------------------- */
+
+  function extractObjectFromSpeech(phrase) {
+    const text = normalize(phrase);
+    for (const pattern of [
+      /^tell me more about\s+(.+)$/,
+      /^tell me about\s+(.+)$/,
+      /^what are\s+(.+)$/,
+      /^what(?:\s+is|\s+s)\s+(.+)$/
+    ]) {
+      const m = text.match(pattern);
+      if (m?.[1]) return sanitize(m[1]);
+    }
+    return "";
+  }
+
+  /* -----------------------------------------------
+     Handler Map
+     ----------------------------------------------- */
+
+  const HANDLERS = {
+    home:                    () => window.location.replace("/index.html"),
+    help:                    () => window.location.replace("/pages/help.html"),
+    cancel:                  () => cancelCurrentAction(),
+    carouselLeft:            () => moveCarousel(-1),
+    carouselRight:           () => moveCarousel(1),
+    scrollUp:                () => scrollPage(-1),
+    scrollDown:              () => scrollPage(1),
+    readCurrentItem:         () => readCurrentItem(),
+    openCurrentItemOverlay:  () => openItemOverlay(),
+    closeItemOverlay:        () => closeItemOverlay(),
+    creatorCollectionSearch: c => openCreatorCollection(c),
+    search:                  q => window.location.replace("/pages/scroll.html?q=" + encodeURIComponent(q || "")),
+    openItemOnPage:          n => openItemFromPage(n),
+    objectExplanation:       n => explainWithDisambiguation(n)
+  };
+
+  /* -----------------------------------------------
+     Initialization
+     ----------------------------------------------- */
+
+  async function init() {
+    const config = await loadConfig("/commands.json");
+
+    for (const [name, path] of Object.entries(COMMAND_DEFS)) {
+      commandPhrases[name] = resolvePhrases(config, path);
+    }
+
+    registerBaseCommands();
+
+    annyang.addCallback("result", phrases => {
+      if (phrases.length) console.log("Speech Detected: " + phrases[0]);
     });
 
-    annyang.addCallback("resultNoMatch", (phrases) => {
-      if (!Array.isArray(phrases) || !phrases.length) {
-        return;
-      }
-
-      const fallbackObject = extractObjectFromFreeSpeech(phrases[0]);
-      if (!fallbackObject) {
-        return;
-      }
-
-      explainObjectWithDisambiguation(fallbackObject);
+    annyang.addCallback("resultNoMatch", phrases => {
+      if (!Array.isArray(phrases) || !phrases.length) return;
+      const obj = extractObjectFromSpeech(phrases[0]);
+      if (obj) explainWithDisambiguation(obj);
     });
 
-    // Toggle mic glow while the recognizer is actively hearing sound.
     annyang.addCallback("soundstart", () => {
-      const micSvg = document.querySelector(".mic svg");
-      if (micSvg) {
-        micSvg.classList.add("listening");
-      }
+      document.querySelector(".mic svg")?.classList.add("listening");
     });
 
     annyang.addCallback("end", () => {
-      const micSvg = document.querySelector(".mic svg");
-      if (micSvg) {
-        micSvg.classList.remove("listening");
-      }
+      document.querySelector(".mic svg")?.classList.remove("listening");
     });
 
     annyang.start();
+    patchRecognitionTranscripts();
   }
 
-  initializeVoiceCommands().catch((error) => {
-    console.error("Failed to initialize voice commands", error);
-  });
-}
+  // Strip trailing punctuation (e.g. "." added by speech recognition) from
+  // transcripts before annyang matches them against commands.
+  function patchRecognitionTranscripts() {
+    const recognizer = annyang.getSpeechRecognizer?.();
+    if (!recognizer) return;
+
+    const originalHandler = recognizer.onresult;
+    if (typeof originalHandler !== "function") return;
+
+    recognizer.onresult = function (event) {
+      if (event?.results) {
+        for (const result of event.results) {
+          for (const alt of result) {
+            if (typeof alt.transcript === "string") {
+              Object.defineProperty(alt, "transcript", {
+                value: alt.transcript.replace(/[.!?]+$/, "").trim(),
+                writable: false
+              });
+            }
+          }
+        }
+      }
+      return originalHandler.call(this, event);
+    };
+  }
+
+  init().catch(e => console.error("Voice init failed:", e));
+})();

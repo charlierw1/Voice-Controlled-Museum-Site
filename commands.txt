@@ -13,6 +13,12 @@ What's {object}
 Take me to {object}
 Tell me about {object}
 See item {object}
+Show me items created by {creator}
+Show me works created by {creator}
+Show me the collection by {creator}
+Open the collection by {creator}
+Take me to the collection by {creator}
+Show me {creator} collection
 
 
 Take me back to the menu

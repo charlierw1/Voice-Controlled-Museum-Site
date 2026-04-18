@@ -49,6 +49,7 @@ The Voice Controlled Museum is a hands-free, voice-driven interface designed to 
 ### Search & Content Commands
 
 - **Search by Category**: "show me *object" (e.g., "show me all ceramics")
+- **Search by Creator Collection**: "show me items created by *creator"
 - **Get More Information**: "show me a list of *object", "show more about *object"
 
 ## File Structure

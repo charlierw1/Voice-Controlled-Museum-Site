@@ -72,13 +72,21 @@
       "openCurrentItemOverlay": [
         "enlarge",
         "enlarge image",
+        "enlarge this image",
+        "enlarge current image",
         "enlarge current image",
         "make image bigger",
         "make current image bigger",
         "make the image bigger",
         "make the current image bigger",
         "enhance",
-        "enhance image"
+        "enhance image",
+        "enhance this image",
+        "enhance current image",
+        "enchance",
+        "enchance image",
+        "enchance this image",
+        "enchance current image"
       ],
       "closeItemOverlay": [
         "close image",
@@ -102,8 +110,21 @@
         "see *object",
         "see item *object"
       ],
+      "creatorCollectionSearch": [
+        "show me items created by *creator",
+        "show me works created by *creator",
+        "show me the collection by *creator",
+        "open the collection by *creator",
+        "take me to the collection by *creator",
+        "show me *creator collection"
+      ],
       "openItemOnPage": [
         "open *object",
+        "open item *object",
+        "take me to *object item",
+        "go to *object item",
+        "show *object item",
+        "open, *object",
         "open item *object",
         "take me to *object item",
         "go to *object item",
