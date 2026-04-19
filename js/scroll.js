@@ -1,4 +1,5 @@
-const SCROLL_VISIBLE_ROWS = 3;
+const SCROLL_DESKTOP_VISIBLE_ROWS = 3;
+const SCROLL_MOBILE_VISIBLE_ROWS = 4;
 const SCROLL_BUFFER_ROWS = 1;
 const SCROLL_FETCH_SIZE = 24;
 const SCROLL_ANIMATION_MS = 420;
@@ -20,6 +21,14 @@ function getScrollDisplayTitle(record) {
         return record.objectType.trim();
     }
     return "Untitled object";
+}
+
+function isMobileScrollView() {
+    return window.matchMedia("(max-width: 760px)").matches;
+}
+
+function getScrollVisibleRows() {
+    return isMobileScrollView() ? SCROLL_MOBILE_VISIBLE_ROWS : SCROLL_DESKTOP_VISIBLE_ROWS;
 }
 
 function createScrollCardSlot() {
@@ -75,7 +84,7 @@ function applyRecordToSlot(slot, record) {
     slot.href = `item.html?id=${encodeURIComponent(record.systemNumber)}`;
 }
 
-function applyScrollSlotState(slot, relativeRowIndex) {
+function applyScrollSlotState(slot, relativeRowIndex, visibleRows) {
     slot.classList.remove("scroll-card-peripheral", "scroll-card-peripheral-top", "scroll-card-peripheral-bottom", "scroll-card-focus");
 
     if (relativeRowIndex < 0) {
@@ -83,7 +92,7 @@ function applyScrollSlotState(slot, relativeRowIndex) {
         return;
     }
 
-    if (relativeRowIndex >= SCROLL_VISIBLE_ROWS) {
+    if (relativeRowIndex >= visibleRows) {
         slot.classList.add("scroll-card-peripheral", "scroll-card-peripheral-bottom");
         return;
     }
@@ -122,7 +131,8 @@ window.addEventListener("load", () => {
         emptyStateLabel: query ? "No results found" : "No search query",
         isAnimating: false,
         records: [],
-        topRowIndex: 0
+        topRowIndex: 0,
+        visibleRows: getScrollVisibleRows()
     };
 
     let resizeObserver;
@@ -145,7 +155,18 @@ window.addEventListener("load", () => {
     }
 
     function getMaxTopRowIndex() {
-        return Math.max(0, getTotalRows() - SCROLL_VISIBLE_ROWS);
+        return Math.max(0, getTotalRows() - state.visibleRows);
+    }
+
+    function syncVisibleRows() {
+        const nextVisibleRows = getScrollVisibleRows();
+        if (nextVisibleRows === state.visibleRows) {
+            return false;
+        }
+
+        state.visibleRows = nextVisibleRows;
+        state.topRowIndex = Math.min(state.topRowIndex, getMaxTopRowIndex());
+        return true;
     }
 
     function getRecordForPosition(rowIndex, columnIndex) {
@@ -232,6 +253,11 @@ window.addEventListener("load", () => {
     }
 
     function drawLines() {
+        if (isMobileScrollView()) {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            return;
+        }
+
         resizeCanvas();
 
         const boxRect = scrollBox.getBoundingClientRect();
@@ -277,11 +303,11 @@ window.addEventListener("load", () => {
         columns.forEach((column) => {
             const slots = [];
 
-            for (let visibleIndex = -SCROLL_BUFFER_ROWS; visibleIndex < SCROLL_VISIBLE_ROWS + SCROLL_BUFFER_ROWS; visibleIndex += 1) {
+            for (let visibleIndex = -SCROLL_BUFFER_ROWS; visibleIndex < state.visibleRows + SCROLL_BUFFER_ROWS; visibleIndex += 1) {
                 const slot = createScrollCardSlot();
                 const rowIndex = state.topRowIndex + visibleIndex;
                 applyRecordToSlot(slot, getRecordForPosition(rowIndex, column.index));
-                applyScrollSlotState(slot, visibleIndex);
+                applyScrollSlotState(slot, visibleIndex, state.visibleRows);
                 slots.push(slot);
             }
 
@@ -328,7 +354,7 @@ window.addEventListener("load", () => {
         const cardHeight = firstSlot.getBoundingClientRect().height;
         const rowStep = cardHeight + gap;
         const peekHeight = Math.round(cardHeight * SCROLL_PEEK_RATIO);
-        const visibleHeight = (firstSlot.getBoundingClientRect().height * SCROLL_VISIBLE_ROWS) + (gap * Math.max(0, SCROLL_VISIBLE_ROWS - 1));
+        const visibleHeight = (firstSlot.getBoundingClientRect().height * state.visibleRows) + (gap * Math.max(0, state.visibleRows - 1));
         const viewportHeight = visibleHeight + (peekHeight * 2);
 
         state.baseOffset = -(rowStep - peekHeight);
@@ -395,16 +421,16 @@ window.addEventListener("load", () => {
         columns.forEach((column) => {
             const incomingSlot = createScrollCardSlot();
             const incomingRowIndex = direction > 0
-                ? state.topRowIndex + SCROLL_VISIBLE_ROWS + SCROLL_BUFFER_ROWS
+                ? state.topRowIndex + state.visibleRows + SCROLL_BUFFER_ROWS
                 : state.topRowIndex - SCROLL_BUFFER_ROWS - 1;
 
             applyRecordToSlot(incomingSlot, getRecordForPosition(incomingRowIndex, column.index));
 
             if (direction > 0) {
-                applyScrollSlotState(incomingSlot, SCROLL_VISIBLE_ROWS + SCROLL_BUFFER_ROWS);
+                applyScrollSlotState(incomingSlot, state.visibleRows + SCROLL_BUFFER_ROWS, state.visibleRows);
                 column.track.append(incomingSlot);
             } else {
-                applyScrollSlotState(incomingSlot, -SCROLL_BUFFER_ROWS - 1);
+                applyScrollSlotState(incomingSlot, -SCROLL_BUFFER_ROWS - 1, state.visibleRows);
                 column.track.prepend(incomingSlot);
                 column.track.style.transform = `translateY(${state.baseOffset - rowStep}px)`;
             }
@@ -464,6 +490,11 @@ window.addEventListener("load", () => {
     }
 
     function handleLayoutChange() {
+        if (syncVisibleRows()) {
+            renderVisibleRows();
+            return;
+        }
+
         updateViewportHeights();
         drawLines();
     }

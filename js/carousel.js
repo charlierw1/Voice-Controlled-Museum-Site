@@ -1,5 +1,6 @@
-const CAROUSEL_VISIBLE_COUNT = 5;
-const CAROUSEL_CENTER_INDEX = 2;
+const CAROUSEL_DESKTOP_VISIBLE_COUNT = 5;
+const CAROUSEL_MOBILE_VISIBLE_COUNT = 6;
+const CAROUSEL_MOBILE_BREAKPOINT = 760;
 const CAROUSEL_PAGE_SIZE = 24;
 const CAROUSEL_ANIMATION_MS = 360;
 
@@ -27,6 +28,8 @@ async function initializeCarousel() {
         carousel,
         leftArrow,
         rightArrow,
+        visibleCount: getCarouselVisibleCount(),
+        centerIndex: 0,
         cardLinks: [],
         cardBodies: [],
         records: [],
@@ -39,40 +42,119 @@ async function initializeCarousel() {
         isBusy: false
     };
 
-    createCardSlots(state);
+    state.centerIndex = getCarouselCenterIndex(state.visibleCount);
+
+    syncCardSlots(state, state.visibleCount);
     wireArrow(state, leftArrow, "Previous items", () => shiftCarousel(state, -1));
     wireArrow(state, rightArrow, "Next items", () => shiftCarousel(state, 1));
 
-    await ensureWindowData(state, CAROUSEL_VISIBLE_COUNT + 1);
+    await ensureWindowData(state, state.visibleCount + 1);
+    renderWindow(state);
+    preloadAhead(state);
+    wireCarouselResize(state);
+}
+
+function getCarouselVisibleCount() {
+    return window.matchMedia(`(max-width: ${CAROUSEL_MOBILE_BREAKPOINT}px)`).matches
+        ? CAROUSEL_MOBILE_VISIBLE_COUNT
+        : CAROUSEL_DESKTOP_VISIBLE_COUNT;
+}
+
+function getCarouselCenterIndex(visibleCount) {
+    return Math.floor((visibleCount - 1) / 2);
+}
+
+function wireCarouselResize(state) {
+    let resizeTimer = null;
+
+    window.addEventListener("resize", () => {
+        if (resizeTimer) {
+            window.clearTimeout(resizeTimer);
+        }
+
+        resizeTimer = window.setTimeout(() => {
+            refreshCarouselLayout(state).catch((error) => {
+                console.error("Carousel resize update failed", error);
+            });
+        }, 120);
+    });
+}
+
+async function refreshCarouselLayout(state) {
+    if (state.isBusy) {
+        return;
+    }
+
+    const nextVisibleCount = getCarouselVisibleCount();
+    if (nextVisibleCount === state.visibleCount) {
+        return;
+    }
+
+    state.visibleCount = nextVisibleCount;
+    state.centerIndex = getCarouselCenterIndex(nextVisibleCount);
+
+    const maxStartIndex = Math.max(0, state.records.length - state.visibleCount);
+    state.startIndex = Math.min(state.startIndex, maxStartIndex);
+
+    await ensureWindowData(state, state.startIndex + state.visibleCount + 1);
+    syncCardSlots(state, state.visibleCount);
     renderWindow(state);
     preloadAhead(state);
 }
 
-function createCardSlots(state) {
-    state.carousel.querySelectorAll("a").forEach((anchor) => {
-        anchor.remove();
-    });
+function syncCardSlots(state, requiredCount) {
+    const links = Array.from(state.carousel.children).filter((element) => element.tagName === "A");
 
-    for (let i = 0; i < CAROUSEL_VISIBLE_COUNT; i += 1) {
-        const anchor = document.createElement("a");
-        anchor.href = "#";
+    if (links.length > requiredCount) {
+        for (let i = links.length - 1; i >= requiredCount; i -= 1) {
+            links[i].remove();
+        }
+    }
+
+    if (links.length < requiredCount) {
+        for (let i = links.length; i < requiredCount; i += 1) {
+            const anchor = document.createElement("a");
+            anchor.href = "#";
+            anchor.target = "_blank";
+            anchor.rel = "noopener noreferrer";
+
+            const card = document.createElement("div");
+            card.className = "image-card loading";
+
+            const label = document.createElement("span");
+            label.textContent = "Loading item";
+
+            card.appendChild(label);
+            anchor.appendChild(card);
+            state.carousel.insertBefore(anchor, state.rightArrow);
+        }
+    }
+
+    state.cardLinks = Array.from(state.carousel.children)
+        .filter((element) => element.tagName === "A")
+        .slice(0, requiredCount);
+
+    state.cardBodies = state.cardLinks.map((anchor, slot) => {
         anchor.target = "_blank";
         anchor.rel = "noopener noreferrer";
 
-        const card = document.createElement("div");
-        card.className = "image-card loading";
+        let card = anchor.querySelector(".image-card");
+        if (!card) {
+            card = document.createElement("div");
+            card.className = "image-card loading";
+            anchor.appendChild(card);
+        }
 
-        const label = document.createElement("span");
-        label.textContent = "Loading item";
+        let label = card.querySelector("span");
+        if (!label) {
+            label = document.createElement("span");
+            label.textContent = "Loading item";
+            card.appendChild(label);
+        }
 
-        card.appendChild(label);
-        anchor.appendChild(card);
-        card.style.setProperty("--carousel-slot", String(i));
-
-        state.carousel.insertBefore(anchor, state.rightArrow);
-        state.cardLinks.push(anchor);
-        state.cardBodies.push(card);
-    }
+        card.style.setProperty("--carousel-slot", String(slot));
+        return card;
+    });
 }
 
 function wireArrow(state, arrow, label, onActivate) {
@@ -111,9 +193,9 @@ async function shiftCarousel(state, direction) {
     const targetStart = state.startIndex + direction;
 
     if (direction > 0) {
-        await ensureWindowData(state, targetStart + CAROUSEL_VISIBLE_COUNT + 1);
+        await ensureWindowData(state, targetStart + state.visibleCount + 1);
 
-        const hasEnoughData = targetStart + CAROUSEL_VISIBLE_COUNT <= state.records.length;
+        const hasEnoughData = targetStart + state.visibleCount <= state.records.length;
         if (!hasEnoughData) {
             return;
         }
@@ -183,23 +265,23 @@ async function appendNextPage(state) {
 }
 
 function renderWindow(state) {
-    for (let slot = 0; slot < CAROUSEL_VISIBLE_COUNT; slot += 1) {
+    for (let slot = 0; slot < state.visibleCount; slot += 1) {
         const recordIndex = state.startIndex + slot;
         const record = state.records[recordIndex];
         const anchor = state.cardLinks[slot];
         const card = state.cardBodies[slot];
-        applyRecordToCard(card, anchor, record, slot);
+        applyRecordToCard(card, anchor, record, slot, state.centerIndex);
     }
 
     updateArrowDisabledVisual(state, state.leftArrow, state.startIndex === 0);
-    const cannotMoveRight = !state.hasMore && state.startIndex + CAROUSEL_VISIBLE_COUNT >= state.records.length;
+    const cannotMoveRight = !state.hasMore && state.startIndex + state.visibleCount >= state.records.length;
     updateArrowDisabledVisual(state, state.rightArrow, cannotMoveRight);
 }
 
-function applyRecordToCard(card, anchor, record, slot) {
+function applyRecordToCard(card, anchor, record, slot, centerIndex) {
     const label = card.querySelector("span");
 
-    card.classList.toggle("image-card-center", slot === CAROUSEL_CENTER_INDEX);
+    card.classList.toggle("image-card-center", slot === centerIndex);
 
     if (!record) {
         card.classList.add("loading");
@@ -231,10 +313,10 @@ function applyRecordToCard(card, anchor, record, slot) {
 
 function preloadAhead(state) {
     const preloadIndexes = [
-        state.startIndex + CAROUSEL_VISIBLE_COUNT,
-        state.startIndex + CAROUSEL_VISIBLE_COUNT + 1,
-        state.startIndex + CAROUSEL_VISIBLE_COUNT + 2,
-        state.startIndex + CAROUSEL_VISIBLE_COUNT + 3
+        state.startIndex + state.visibleCount,
+        state.startIndex + state.visibleCount + 1,
+        state.startIndex + state.visibleCount + 2,
+        state.startIndex + state.visibleCount + 3
     ];
 
     preloadIndexes.forEach((index) => {
@@ -249,9 +331,9 @@ function preloadAhead(state) {
         state.preloadedImages.add(imageUrl);
     });
 
-    if (state.records.length - (state.startIndex + CAROUSEL_VISIBLE_COUNT) < 10) {
+    if (state.records.length - (state.startIndex + state.visibleCount) < 10) {
         ensureWindowData(state, state.records.length + CAROUSEL_PAGE_SIZE).then(() => {
-            updateArrowDisabledVisual(state, state.rightArrow, !state.hasMore && state.startIndex + CAROUSEL_VISIBLE_COUNT >= state.records.length);
+            updateArrowDisabledVisual(state, state.rightArrow, !state.hasMore && state.startIndex + state.visibleCount >= state.records.length);
         }).catch((error) => {
             console.error("Failed to preload additional carousel data", error);
         });
@@ -268,12 +350,12 @@ async function animateShift(state, targetStart) {
         card.classList.add("carousel-card-hidden");
     });
 
-    for (let slot = 0; slot < CAROUSEL_VISIBLE_COUNT; slot += 1) {
+    for (let slot = 0; slot < state.visibleCount; slot += 1) {
         const record = state.records[state.startIndex + slot];
         const sourceRect = slotRects[slot];
         const targetSlot = slot - direction;
         const targetRect = slotRects[targetSlot];
-        const clone = createMotionClone(record, slot, sourceRect);
+        const clone = createMotionClone(record, slot, sourceRect, state.centerIndex);
 
         if (targetRect) {
             moveCloneToRect(clone, sourceRect, targetRect);
@@ -285,12 +367,12 @@ async function animateShift(state, targetStart) {
     }
 
     const incomingRecordIndex = direction > 0
-        ? targetStart + CAROUSEL_VISIBLE_COUNT - 1
+        ? targetStart + state.visibleCount - 1
         : targetStart;
-    const incomingSlot = direction > 0 ? CAROUSEL_VISIBLE_COUNT - 1 : 0;
+    const incomingSlot = direction > 0 ? state.visibleCount - 1 : 0;
     const incomingTargetRect = slotRects[incomingSlot];
     const incomingStartRect = createIncomingRect(incomingTargetRect, direction, slotGap);
-    const incomingClone = createMotionClone(state.records[incomingRecordIndex], incomingSlot, incomingStartRect);
+    const incomingClone = createMotionClone(state.records[incomingRecordIndex], incomingSlot, incomingStartRect, state.centerIndex);
     moveCloneToRect(incomingClone, incomingStartRect, incomingTargetRect);
     overlayClones.push(incomingClone);
 
@@ -305,13 +387,13 @@ async function animateShift(state, targetStart) {
     });
 }
 
-function createMotionClone(record, slot, rect) {
+function createMotionClone(record, slot, rect, centerIndex) {
     const clone = document.createElement("div");
     clone.className = "image-card carousel-motion-clone";
 
     const label = document.createElement("span");
     clone.appendChild(label);
-    applyRecordToCard(clone, null, record, slot);
+    applyRecordToCard(clone, null, record, slot, centerIndex);
 
     clone.style.left = `${rect.left}px`;
     clone.style.top = `${rect.top}px`;

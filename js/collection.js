@@ -1,15 +1,19 @@
 const COLLECTION_SEARCH_URL = "https://api.vam.ac.uk/v2/objects/search?";
+const COLLECTION_PERSON_URL = "https://api.vam.ac.uk/v2/person/";
+const COLLECTION_ORGANISATION_URL = "https://api.vam.ac.uk/v2/organisation/";
 const COLLECTION_CREATOR_PAGE_SIZE = 100;
-const COLLECTION_VISIBLE_CREATOR_COUNT = 5;
-const COLLECTION_CENTER_SLOT = 2;
-const COLLECTION_PANEL_ITEM_COUNT = 5;
+const COLLECTION_DESKTOP_VISIBLE_CREATOR_COUNT = 5;
+const COLLECTION_MOBILE_VISIBLE_CREATOR_COUNT = 6;
+const COLLECTION_MOBILE_BREAKPOINT = 760;
+const COLLECTION_PANEL_ITEM_COUNT = 6;
 const FEATURED_CREATORS = [
     { id: "A8676", label: "William Morris" },
     { id: "A8296", label: "Walter Crane" },
     { id: "A8134", label: "Aubrey Beardsley" },
     { id: "A8328", label: "William de Morgan" },
     { id: "A7595", label: "Arthur Rackham" },
-    { id: "A6630", label: "J. B. Yeats" }
+    { id: "A6630", label: "J. B. Yeats" },
+    { id: "A2265", label: "Alphonse Mucha" }
 ];
 window.addEventListener("load", () => {
     initializeCollectionPage().catch((error) => {
@@ -24,6 +28,9 @@ async function initializeCollectionPage() {
     const bannerTitle = banner?.querySelector("h2");
     const bannerDescription = banner?.querySelector("span");
     const carousel = page?.querySelector(".carousel");
+    const visibleCreatorCount = getCollectionVisibleCreatorCount();
+    const centerSlot = getCollectionCenterSlot(visibleCreatorCount);
+    ensureCarouselSlots(carousel, visibleCreatorCount);
     const arrows = carousel ? Array.from(carousel.querySelectorAll(".arrow")) : [];
     const carouselLinks = carousel
         ? Array.from(carousel.children).filter((element) => element.tagName === "A")
@@ -48,12 +55,15 @@ async function initializeCollectionPage() {
     }
 
     const state = {
+        carousel,
         banner,
         bannerLink,
         bannerTitle,
         bannerDescription,
         leftArrow: arrows[0],
         rightArrow: arrows[1],
+        visibleCreatorCount,
+        centerSlot,
         carouselLinks,
         carouselCards,
         collectionTitle,
@@ -82,8 +92,8 @@ async function initializeCollectionPage() {
     if (creatorBuild.selectedCreatorId) {
         const selectedIndex = state.creators.findIndex((creator) => creator.id === creatorBuild.selectedCreatorId);
         if (selectedIndex >= 0) {
-          const maxStartIndex = Math.max(0, state.creators.length - COLLECTION_VISIBLE_CREATOR_COUNT);
-          state.startIndex = clampNumber(selectedIndex - COLLECTION_CENTER_SLOT, 0, maxStartIndex);
+            const maxStartIndex = Math.max(0, state.creators.length - state.visibleCreatorCount);
+            state.startIndex = clampNumber(selectedIndex - state.centerSlot, 0, maxStartIndex);
         }
     }
 
@@ -92,10 +102,105 @@ async function initializeCollectionPage() {
     }
 
     renderCollectionState(state, { updateUrl: Boolean(creatorQuery) });
+    wireCollectionResize(state);
 
     if (creatorBuild.backgroundCreatorDefinitions?.length) {
         loadBackgroundCreators(state, creatorBuild.backgroundCreatorDefinitions);
     }
+}
+
+function getCollectionVisibleCreatorCount() {
+    return window.matchMedia(`(max-width: ${COLLECTION_MOBILE_BREAKPOINT}px)`).matches
+        ? COLLECTION_MOBILE_VISIBLE_CREATOR_COUNT
+        : COLLECTION_DESKTOP_VISIBLE_CREATOR_COUNT;
+}
+
+function getCollectionCenterSlot(visibleCreatorCount) {
+    return Math.floor((visibleCreatorCount - 1) / 2);
+}
+
+function ensureCarouselSlots(carousel, requiredCount) {
+    if (!carousel) {
+        return;
+    }
+
+    const links = Array.from(carousel.children).filter((element) => element.tagName === "A");
+
+    for (let i = links.length; i < requiredCount; i += 1) {
+        const anchor = document.createElement("a");
+        anchor.href = "#";
+
+        const card = document.createElement("div");
+        card.className = "image-card loading";
+
+        const label = document.createElement("span");
+        label.textContent = "Loading creator";
+
+        card.appendChild(label);
+        anchor.appendChild(card);
+
+        const rightArrow = carousel.querySelector(".arrow:last-of-type");
+        if (rightArrow) {
+            carousel.insertBefore(anchor, rightArrow);
+        } else {
+            carousel.appendChild(anchor);
+        }
+    }
+}
+
+function syncCarouselSlots(state, requiredCount) {
+    if (!state.carousel) {
+        return;
+    }
+
+    const links = Array.from(state.carousel.children).filter((element) => element.tagName === "A");
+
+    if (links.length > requiredCount) {
+        for (let i = links.length - 1; i >= requiredCount; i -= 1) {
+            links[i].remove();
+        }
+    } else if (links.length < requiredCount) {
+        ensureCarouselSlots(state.carousel, requiredCount);
+    }
+
+    state.carouselLinks = Array.from(state.carousel.children).filter((element) => element.tagName === "A");
+    state.carouselCards = state.carouselLinks.map((link) => link.querySelector(".image-card"));
+}
+
+function wireCollectionResize(state) {
+    let resizeTimer = null;
+
+    window.addEventListener("resize", () => {
+        if (resizeTimer) {
+            window.clearTimeout(resizeTimer);
+        }
+
+        resizeTimer = window.setTimeout(() => {
+            refreshCollectionCarouselLayout(state);
+        }, 120);
+    });
+}
+
+function refreshCollectionCarouselLayout(state) {
+    const nextVisibleCount = getCollectionVisibleCreatorCount();
+    if (nextVisibleCount === state.visibleCreatorCount) {
+        return;
+    }
+
+    state.visibleCreatorCount = nextVisibleCount;
+    state.centerSlot = getCollectionCenterSlot(nextVisibleCount);
+
+    syncCarouselSlots(state, nextVisibleCount);
+    wireCarouselCards(state);
+
+    const maxStartIndex = Math.max(0, state.creators.length - state.visibleCreatorCount);
+    state.startIndex = clampNumber(state.startIndex, 0, maxStartIndex);
+
+    if (!state.activeCreatorId) {
+        state.activeCreatorId = getCenteredCreator(state)?.id || state.creators[0]?.id || "";
+    }
+
+    renderCollectionState(state, { updateUrl: false });
 }
 
 async function buildCollectionCreators(creatorQuery) {
@@ -123,14 +228,37 @@ async function buildCollectionCreators(creatorQuery) {
         };
     }
 
-    const creators = await Promise.all(FEATURED_CREATORS.map((creator) => loadCreatorById(creator)));
-    const filteredCreators = creators.filter((creator) => creator.records.length >= 3);
+    let initialCreator = null;
+    let initialCreatorIndex = -1;
+
+    for (let i = 0; i < FEATURED_CREATORS.length; i += 1) {
+        const creator = await loadCreatorById(FEATURED_CREATORS[i]);
+        if (creator.records.length >= 3) {
+            initialCreator = creator;
+            initialCreatorIndex = i;
+            break;
+        }
+    }
+
+    if (!initialCreator) {
+        return {
+            creators: [],
+            selectedCreatorId: "",
+            unresolvedQuery: "",
+            backgroundCreatorDefinitions: []
+        };
+    }
+
+    const backgroundCreatorDefinitions = [
+        ...FEATURED_CREATORS.slice(initialCreatorIndex + 1),
+        ...FEATURED_CREATORS.slice(0, initialCreatorIndex)
+    ];
 
     return {
-        creators: filteredCreators,
-        selectedCreatorId: "",
+        creators: [initialCreator],
+        selectedCreatorId: initialCreator.id,
         unresolvedQuery: "",
-        backgroundCreatorDefinitions: []
+        backgroundCreatorDefinitions
     };
 }
 
@@ -171,6 +299,11 @@ function wireCollectionArrow(arrow, label, onActivate) {
 
 function wireCarouselCards(state) {
     state.carouselLinks.forEach((link, slot) => {
+        if (link.dataset.carouselBound === "true") {
+            return;
+        }
+
+        link.dataset.carouselBound = "true";
         link.addEventListener("click", (event) => {
             const creatorIndex = state.startIndex + slot;
             const creator = state.creators[creatorIndex];
@@ -190,7 +323,7 @@ async function moveCreatorWindow(state, direction) {
         return;
     }
 
-    const maxStartIndex = Math.max(0, state.creators.length - COLLECTION_VISIBLE_CREATOR_COUNT);
+    const maxStartIndex = Math.max(0, state.creators.length - state.visibleCreatorCount);
     const nextStartIndex = clampNumber(state.startIndex + direction, 0, maxStartIndex);
 
     if (nextStartIndex === state.startIndex) {
@@ -205,8 +338,8 @@ async function moveCreatorWindow(state, direction) {
 }
 
 function centerCarouselOnCreator(state, creatorIndex) {
-    const maxStartIndex = Math.max(0, state.creators.length - COLLECTION_VISIBLE_CREATOR_COUNT);
-    state.startIndex = clampNumber(creatorIndex - COLLECTION_CENTER_SLOT, 0, maxStartIndex);
+    const maxStartIndex = Math.max(0, state.creators.length - state.visibleCreatorCount);
+    state.startIndex = clampNumber(creatorIndex - state.centerSlot, 0, maxStartIndex);
     state.activeCreatorId = state.creators[creatorIndex]?.id || state.activeCreatorId;
     renderCollectionState(state, { updateUrl: true });
 }
@@ -220,8 +353,12 @@ function findFeaturedCreator(query) {
 
 async function loadCreatorById(creator) {
     const parameters = `id_maker=${encodeURIComponent(creator.id)}&page_size=${COLLECTION_CREATOR_PAGE_SIZE}`;
-    const data = await getData(COLLECTION_SEARCH_URL, parameters);
-    return buildCreatorFromResponse(data, creator.id, creator.label);
+    const [data, authorityBio] = await Promise.all([
+        getData(COLLECTION_SEARCH_URL, parameters),
+        fetchCreatorAuthorityBio(creator.id)
+    ]);
+
+    return buildCreatorFromResponse(data, creator.id, creator.label, authorityBio);
 }
 
 async function loadCreatorByName(query) {
@@ -255,19 +392,59 @@ async function loadCreatorByName(query) {
     return null;
 }
 
-function buildCreatorFromResponse(data, id, label) {
+function buildCreatorFromResponse(data, id, label, authorityBio = "") {
     const records = filterImageRecords(data?.records ?? []);
     const heroRecord = records[0] || null;
     const displayName = heroRecord?._primaryMaker?.name?.trim() || label;
+    const fallbackSummary = buildCreatorSummary(heroRecord, Number(data?.info?.record_count) || records.length);
 
     return {
         id,
         label,
         displayName,
-        description: buildCreatorSummary(heroRecord, Number(data?.info?.record_count) || records.length),
+        description: authorityBio || fallbackSummary,
         recordCount: Number(data?.info?.record_count) || records.length,
         records
     };
+}
+
+async function fetchCreatorAuthorityBio(systemNumber) {
+    if (!systemNumber) {
+        return "";
+    }
+
+    const person = await getData(COLLECTION_PERSON_URL, encodeURIComponent(systemNumber));
+    const personBio = normalizeAuthorityText(person?.biography);
+    if (personBio) {
+        return personBio;
+    }
+
+    const organisation = await getData(COLLECTION_ORGANISATION_URL, encodeURIComponent(systemNumber));
+    const organisationHistory = normalizeAuthorityText(organisation?.history);
+    if (organisationHistory) {
+        return organisationHistory;
+    }
+
+    return "";
+}
+
+function normalizeAuthorityText(text) {
+    if (typeof text !== "string") {
+        return "";
+    }
+
+    const cleaned = decodeHtmlEntities(text)
+        .replace(/\r\n|\n|\r/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    return cleaned;
+}
+
+function decodeHtmlEntities(text) {
+    const node = document.createElement("textarea");
+    node.innerHTML = text;
+    return node.value;
 }
 
 function filterImageRecords(records) {
@@ -305,7 +482,7 @@ function renderCreatorCarousel(state) {
         const link = state.carouselLinks[slot];
         const label = card?.querySelector("span");
 
-        card.classList.toggle("image-card-center", slot === COLLECTION_CENTER_SLOT);
+        card.classList.toggle("image-card-center", slot === state.centerSlot);
 
         if (!creator || !label) {
             card.classList.add("loading");
@@ -355,13 +532,14 @@ function getActiveCreator(state) {
 }
 
 function getCenteredCreator(state) {
-    const selectedIndex = Math.min(state.startIndex + COLLECTION_CENTER_SLOT, state.creators.length - 1);
+    const selectedIndex = Math.min(state.startIndex + state.centerSlot, state.creators.length - 1);
     return state.creators[selectedIndex] || null;
 }
 
 function renderCreatorBanner(state, creator) {
     const heroRecord = creator.records[0];
     const imageUrl = getRecordImageUrl(heroRecord);
+    const bannerSummary = buildCreatorSummary(heroRecord, creator.recordCount);
 
     if (imageUrl) {
         state.banner.style.backgroundImage = `linear-gradient(rgba(8, 10, 12, 0.2), rgba(8, 10, 12, 0.72)), url('${imageUrl}')`;
@@ -371,13 +549,13 @@ function renderCreatorBanner(state, creator) {
     }
 
     state.bannerTitle.textContent = creator.displayName;
-    state.bannerDescription.textContent = creator.description;
+    state.bannerDescription.textContent = bannerSummary;
     state.bannerLink.href = getItemPageUrl(heroRecord);
 }
 
 function renderCreatorPanel(state, creator) {
     state.collectionTitle.textContent = creator.displayName;
-    state.collectionDescription.textContent = `Showing ${Math.min(COLLECTION_PANEL_ITEM_COUNT, creator.records.length)} highlighted works from ${creator.recordCount} V&A objects by this creator.`;
+    state.collectionDescription.textContent = creator.description;
 
     state.panelCards.forEach((card, index) => {
         const record = creator.records[index];
@@ -432,7 +610,7 @@ function updateCollectionUrl(creatorName) {
 }
 
 function updateCollectionArrows(state) {
-    const maxStartIndex = Math.max(0, state.creators.length - COLLECTION_VISIBLE_CREATOR_COUNT);
+    const maxStartIndex = Math.max(0, state.creators.length - state.visibleCreatorCount);
     const disableLeft = state.startIndex <= 0;
     const disableRight = state.startIndex >= maxStartIndex;
 
