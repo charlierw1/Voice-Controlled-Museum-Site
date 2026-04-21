@@ -32,7 +32,8 @@
     creatorCollectionSearch: ["parameterizedCommands", "navigation", "creatorCollectionSearch"],
     search:                  ["parameterizedCommands", "navigation", "search"],
     openItemOnPage:          ["parameterizedCommands", "navigation", "openItemOnPage"],
-    objectExplanation:       ["disambiguatedParameterizedCommands", "objectExplanation"]
+    objectExplanation:       ["disambiguatedParameterizedCommands", "objectExplanation"],
+    similarItems:            ["disambiguatedDirectCommands", "similarItems"]
   };
 
   /* -----------------------------------------------
@@ -497,6 +498,61 @@
     window.location.replace("/pages/collection.html?creator=" + encodeURIComponent(name));
   }
 
+  function buildSimilarQueryFromRecord(record) {
+    const objectType = sanitize(record?.objectType || "");
+    const maker = sanitize(record?._primaryMaker?.name || "");
+    const place = sanitize(record?._primaryPlace || "");
+    const date = sanitize(record?._primaryDate || "");
+    const title = sanitize(getRecordTitle(record));
+
+    if (objectType && maker) return `${objectType} ${maker}`;
+    if (objectType && place) return `${objectType} ${place}`;
+    if (objectType && date) return `${objectType} ${date}`;
+    if (objectType) return objectType;
+    if (maker) return maker;
+    return title;
+  }
+
+  async function openSimilarItems() {
+    const onItemPage = document.body.classList.contains("item-page");
+    if (!onItemPage) {
+      speak("This command works on an item page. Open an item first.");
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const itemId = sanitize(params.get("id") || "");
+
+    // Fallback: use visible item title when item id or API helper is not available.
+    if (!itemId || typeof getData !== "function" || typeof objectURL !== "string") {
+      const panelTitle = sanitize(document.querySelector(".item-page .item-panel h2")?.textContent || "");
+      if (!panelTitle) {
+        speak("I could not determine this item to find similar results.");
+        return;
+      }
+      speak(`Showing similar items for ${panelTitle}`);
+      window.location.replace("/pages/scroll.html?q=" + encodeURIComponent(panelTitle));
+      return;
+    }
+
+    try {
+      const data = await getData(objectURL, encodeURIComponent(itemId));
+      const record = data?.record;
+      const query = buildSimilarQueryFromRecord(record || {});
+
+      if (!query) {
+        speak("I could not build a similar items query for this object.");
+        return;
+      }
+
+      speak(`Showing similar items to ${getRecordTitle(record || {})}`);
+      window.location.replace("/pages/scroll.html?q=" + encodeURIComponent(query));
+    } catch (error) {
+      console.error("Failed to build similar items query", error);
+      speak("I could not load the current item details to find similar items.");
+    }
+  }
+
   /* -----------------------------------------------
      Cancel
      ----------------------------------------------- */
@@ -544,7 +600,8 @@
     creatorCollectionSearch: c => openCreatorCollection(c),
     search:                  q => window.location.replace("/pages/scroll.html?q=" + encodeURIComponent(q || "")),
     openItemOnPage:          n => openItemFromPage(n),
-    objectExplanation:       n => explainWithDisambiguation(n)
+    objectExplanation:       n => explainWithDisambiguation(n),
+    similarItems:            () => openSimilarItems()
   };
 
   /* -----------------------------------------------

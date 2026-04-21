@@ -144,5 +144,14 @@
         "what's *object"
     ]
   },
-  "disambiguatedDirectCommands": {}
+  "disambiguatedDirectCommands": {
+    "similarItems": [
+      "show similar items",
+      "similar items",
+      "find similar items",
+      "show related items",
+      "related items",
+      "more like this"
+    ]
+  }
 }
