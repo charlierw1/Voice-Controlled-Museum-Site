@@ -715,7 +715,7 @@ header {
   width: min(60%, calc(100% - 2rem));
   min-height: 0;
   margin: 2em auto 0;
-  padding: 1.25rem clamp(1rem, 3vw, 2rem) calc(2.5rem + var(--bottom-safe-clearance));
+  padding: 1.25rem clamp(1rem, 3vw, 2rem) 2.5rem;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: clamp(2rem, 5vw, 4.5rem);
@@ -858,7 +858,7 @@ header {
     width: min(80%, calc(100% - 1rem));
     column-gap: clamp(1rem, 3vw, 1.6rem);
     margin-top: 0;
-    padding: 0.7rem 0.75rem calc(2.2rem + var(--bottom-safe-clearance));
+    padding: 0.7rem 0.75rem 2.2rem;
   }
 
   .scroll-page .scroll-panel .image-card {
