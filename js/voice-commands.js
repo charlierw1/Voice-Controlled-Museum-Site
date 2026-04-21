@@ -401,12 +401,10 @@
 
     if (exact.length > 1) {
       const cleanup = renderChoiceOverlays(exact);
-      const summary = exact.slice(0, 4).map((c, i) => `${i + 1}: ${c.label}`).join(". ");
-      const extra = exact.length > 4 ? ` and ${exact.length - 4} more.` : "";
       startClarification({
         choices: exact,
         onSelect: c => { speak(`Opening ${c.label}`); window.location.replace(c.href); },
-        prompt: `I found ${exact.length} exact matches for ${name}. Say the number you want to open. ${summary}${extra}`,
+        prompt: `I found ${exact.length} items with that name. Say the number you want to open.`,
         cleanup
       });
       return;
@@ -480,11 +478,10 @@
     const choices = records.map(buildClarificationChoice);
     if (choices.length === 1) { navigateToItem(choices[0]); return; }
 
-    const optionList = choices.map((c, i) => `${ORDINAL_WORDS[i]}: ${c.label}`).join(". ");
     startClarification({
       choices,
       onSelect: navigateToItem,
-      prompt: `I found multiple matches for ${name}. Say first, second, or third. ${optionList}`
+      prompt: `I found ${choices.length} items with that name. Say first, second, or third.`
     });
   }
 
