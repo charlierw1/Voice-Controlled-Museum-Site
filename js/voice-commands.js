@@ -32,6 +32,7 @@
     creatorCollectionSearch: ["parameterizedCommands", "navigation", "creatorCollectionSearch"],
     search:                  ["parameterizedCommands", "navigation", "search"],
     openItemOnPage:          ["parameterizedCommands", "navigation", "openItemOnPage"],
+    goToPage:                ["parameterizedCommands", "navigation", "goToPage"],
     objectExplanation:       ["disambiguatedParameterizedCommands", "objectExplanation"],
     similarItems:            ["disambiguatedDirectCommands", "similarItems"]
   };
@@ -512,6 +513,60 @@
     window.location.replace("/pages/collection.html?creator=" + encodeURIComponent(name));
   }
 
+  function scoreTitleMatch(normalizedTitle, normalizedTarget, targetTokens) {
+    if (!normalizedTitle || !normalizedTarget) return 0;
+    if (normalizedTitle === normalizedTarget) return 1000;
+    if (normalizedTitle.startsWith(normalizedTarget)) return 700;
+    if (normalizedTitle.includes(normalizedTarget)) return 500;
+
+    const titleTokens = normalizedTitle.split(" ").filter(Boolean);
+    const overlap = targetTokens.reduce((count, token) => count + (titleTokens.includes(token) ? 1 : 0), 0);
+    if (!overlap) return 0;
+    return overlap * 100;
+  }
+
+  async function goToPageByBestMatch(rawName) {
+    const name = sanitize(rawName);
+    if (!name) {
+      speak("Please say the item name you want to open.");
+      return;
+    }
+
+    if (typeof getData !== "function" || typeof searchURL !== "string") {
+      window.location.replace("/pages/scroll.html?q=" + encodeURIComponent(name));
+      return;
+    }
+
+    try {
+      const data = await getData(searchURL, `${encodeURIComponent(name)}&page_size=30`);
+      const records = (data?.records || []).filter((record) => record?.systemNumber);
+      if (!records.length) {
+        speak(`I could not find an item for ${name}.`);
+        return;
+      }
+
+      const normalizedTarget = normalize(name);
+      const targetTokens = normalizedTarget.split(" ").filter(Boolean);
+      let bestRecord = records[0];
+      let bestScore = scoreTitleMatch(normalize(getRecordTitle(bestRecord)), normalizedTarget, targetTokens);
+
+      for (let i = 1; i < records.length; i += 1) {
+        const candidate = records[i];
+        const candidateScore = scoreTitleMatch(normalize(getRecordTitle(candidate)), normalizedTarget, targetTokens);
+        if (candidateScore > bestScore) {
+          bestScore = candidateScore;
+          bestRecord = candidate;
+        }
+      }
+
+      speak(`Opening ${getRecordTitle(bestRecord)}`);
+      window.location.replace(`/pages/item.html?id=${encodeURIComponent(bestRecord.systemNumber)}`);
+    } catch (error) {
+      console.error("Failed to resolve goToPage request", error);
+      speak("I could not find that item right now.");
+    }
+  }
+
   function buildSimilarQueryFromRecord(record) {
     const objectType = sanitize(record?.objectType || "");
     const maker = sanitize(record?._primaryMaker?.name || "");
@@ -634,6 +689,7 @@
     creatorCollectionSearch: c => openCreatorCollection(c),
     search:                  q => handleSearchCommand(q),
     openItemOnPage:          n => openItemFromPage(n),
+    goToPage:                n => goToPageByBestMatch(n),
     objectExplanation:       n => explainWithDisambiguation(n),
     similarItems:            () => openSimilarItems()
   };
