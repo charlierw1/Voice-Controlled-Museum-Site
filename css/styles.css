@@ -929,13 +929,36 @@ header {
   background-color: #6b738a;
   padding: 1em 1.1em 1.35em;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: flex-start;
+  align-items: flex-start;
   border-radius: 0 0 1.1rem 1.1rem;
   border: 1px solid rgba(0, 0, 0, 0.55);
   border-top: none;
   position: relative;
   box-shadow: 0 0.55rem 0.9rem rgba(5, 7, 10, 0.36);
+}
+
+.help-command-block {
+  width: 100%;
+}
+
+.help-command-label {
+  margin: 0.6rem 0 0.2rem;
+  font-size: clamp(1rem, 1.25vw, 1.25rem);
+  opacity: 0.92;
+}
+
+.help-command-block > p {
+  font-size: clamp(1.04rem, 1.2vw, 1.22rem);
+  line-height: 1.6;
+}
+
+.help-command-phrases {
+  margin: 0;
+  font-size: clamp(1rem, 1.3vw, 1.3rem);
+  line-height: 1.72;
+  word-spacing: 0.14em;
+  opacity: 0.95;
 }
 
 .help-page section + section {

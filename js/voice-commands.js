@@ -91,7 +91,9 @@
       if (!node || typeof node !== "object") return [];
       node = node[key];
     }
-    return Array.isArray(node) ? node : [];
+    if (Array.isArray(node)) return node;
+    if (node && typeof node === "object" && Array.isArray(node.commands)) return node.commands;
+    return [];
   }
 
   /* -----------------------------------------------

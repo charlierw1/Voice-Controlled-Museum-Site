@@ -1,159 +1,207 @@
 {
   "directCommands": {
     "navigation": {
-      "home": [
-        "take me back to the menu",
-        "take me back to the home page",
-        "go home",
-        "previous page",
-        "go back to the home page",
-        "back to home",
-        "return to home page",
-        "home",
-        "go back",
-        "home page",
-        "back to home page",
-        "back",
-        "menu",
-        "please send me back to the home page"
-      ],
-      "help": [
-        "display helpful commands",
-        "help"
-      ]
+      "home": {
+        "description": "Navigate back to the homepage or previous main menu context.",
+        "commands": [
+          "take me back to the menu",
+          "take me back to the home page",
+          "go home",
+          "previous page",
+          "go back to the home page",
+          "back to home",
+          "return to home page",
+          "home",
+          "go back",
+          "home page",
+          "back to home page",
+          "back",
+          "menu",
+          "please send me back to the home page"
+        ]
+      },
+      "help": {
+        "description": "Open the help page containing available voice commands.",
+        "commands": [
+          "display helpful commands",
+          "help"
+        ]
+      }
     },
     "pageCommands": {
-      "cancel": [
-        "cancel",
-        "stop",
-        "never mind",
-        "stop current action"
-      ],
-      "carouselLeft": [
-        "move left",
-        "carousel left",
-        "move carousel left",
-        "go left",
-        "previous item",
-        "left"
-      ],
-      "carouselRight": [
-        "move right",
-        "carousel right",
-        "move carousel right",
-        "go right",
-        "next item",
-        "right",
-        "next"
-      ],
-      "scrollUp": [
-        "scroll up",
-        "move up",
-        "page up",
-        "go up"
-      ],
-      "scrollDown": [
-        "scroll down",
-        "move down",
-        "page down",
-        "go down"
-      ],
-      "readCurrentItem": [
-        "read current item",
-        "read this item",
-        "read this page",
-        "read this",
-        "read item",
-        "tell me this item",
-        "describe this item",
-        "describe this",
-        "read this page"
-      ],
-      "openCurrentItemOverlay": [
-        "enlarge",
-        "enlarge image",
-        "enlarge this image",
-        "enlarge current image",
-        "enlarge current image",
-        "make image bigger",
-        "make current image bigger",
-        "make the image bigger",
-        "make the current image bigger",
-        "enhance",
-        "enhance image",
-        "enhance this image",
-        "enhance current image",
-        "enchance",
-        "enchance image",
-        "enchance this image",
-        "enchance current image"
-      ],
-      "closeItemOverlay": [
-        "close image",
-        "close overlay",
-        "hide image",
-        "exit image",
-        "close item image",
-        "close"
-      ]
+      "cancel": {
+        "description": "Cancel the current voice interaction or close transient UI actions.",
+        "commands": [
+          "cancel",
+          "stop",
+          "never mind",
+          "stop current action"
+        ]
+      },
+      "carouselLeft": {
+        "description": "Move the current carousel selection to the previous item.",
+        "commands": [
+          "move left",
+          "carousel left",
+          "move carousel left",
+          "go left",
+          "previous item",
+          "left"
+        ]
+      },
+      "carouselRight": {
+        "description": "Move the current carousel selection to the next item.",
+        "commands": [
+          "move right",
+          "carousel right",
+          "move carousel right",
+          "go right",
+          "next item",
+          "right",
+          "next"
+        ]
+      },
+      "scrollUp": {
+        "description": "Scroll content upward within the current page.",
+        "commands": [
+          "scroll up",
+          "move up",
+          "page up",
+          "go up"
+        ]
+      },
+      "scrollDown": {
+        "description": "Scroll content downward within the current page.",
+        "commands": [
+          "scroll down",
+          "move down",
+          "page down",
+          "go down"
+        ]
+      },
+      "readCurrentItem": {
+        "description": "Read aloud the currently displayed item title and description.",
+        "commands": [
+          "read current item",
+          "read this item",
+          "read this page",
+          "read this",
+          "read item",
+          "tell me this item",
+          "describe this item",
+          "describe this",
+          "read this page"
+        ]
+      },
+      "openCurrentItemOverlay": {
+        "description": "Open an enlarged overlay for the currently focused item image.",
+        "commands": [
+          "enlarge",
+          "enlarge image",
+          "enlarge this image",
+          "enlarge current image",
+          "enlarge current image",
+          "make image bigger",
+          "make current image bigger",
+          "make the image bigger",
+          "make the current image bigger",
+          "enhance",
+          "enhance image",
+          "enhance this image",
+          "enhance current image",
+          "enchance",
+          "enchance image",
+          "enchance this image",
+          "enchance current image"
+        ]
+      },
+      "closeItemOverlay": {
+        "description": "Close the currently open item image overlay.",
+        "commands": [
+          "close image",
+          "close overlay",
+          "hide image",
+          "exit image",
+          "close item image",
+          "close"
+        ]
+      }
     }
   },
   "parameterizedCommands": {
     "navigation": {
-      "search": [
-        "show me *object",
-        "show me a list of *object",
-        "please show me *object",
-        "show more about *object",
-        "show me information about *object",
-        "museum *object",
-        "see *object",
-        "see item *object"
-      ],
-      "creatorCollectionSearch": [
-        "show me items created by *creator",
-        "show me works created by *creator",
-        "show me the collection by *creator",
-        "open the collection by *creator",
-        "take me to the collection by *creator",
-        "show me *creator collection"
-      ],
-      "openItemOnPage": [
-        "open *object",
-        "open item *object",
-        "take me to *object item",
-        "go to *object item",
-        "show *object item",
-        "open, *object",
-        "open item *object",
-        "take me to *object item",
-        "go to *object item",
-        "show *object item"
-      ],
-      "goToPage": [
-        "take me to the *object page",
-        "take me to *object"
-      ]
+      "search": {
+        "description": "Run a search query and open the scroll results page for matching objects.",
+        "commands": [
+          "show me *object",
+          "show me a list of *object",
+          "please show me *object",
+          "show more about *object",
+          "show me information about *object",
+          "museum *object",
+          "see *object",
+          "see item *object"
+        ]
+      },
+      "creatorCollectionSearch": {
+        "description": "Open the collection page filtered by creator name.",
+        "commands": [
+          "show me items created by *creator",
+          "show me works created by *creator",
+          "show me the collection by *creator",
+          "open the collection by *creator",
+          "take me to the collection by *creator",
+          "show me *creator collection"
+        ]
+      },
+      "openItemOnPage": {
+        "description": "Open a matching item link from the currently visible page content.",
+        "commands": [
+          "open *object",
+          "open item *object",
+          "take me to *object item",
+          "go to *object item",
+          "show *object item",
+          "open, *object",
+          "open item *object",
+          "take me to *object item",
+          "go to *object item",
+          "show *object item"
+        ]
+      },
+      "goToPage": {
+        "description": "Find and navigate directly to the best matching object item page.",
+        "commands": [
+          "take me to the *object page",
+          "take me to *object"
+        ]
+      }
     }
   },
   "disambiguatedParameterizedCommands": {
-    "objectExplanation": [
+    "objectExplanation": {
+      "description": "Explain an object by searching and resolving ambiguous matches.",
+      "commands": [
         "tell me more about *object",
         "tell me about *object",
         "what are *object",
         "what's *object"
-    ]
+      ]
+    }
   },
   "disambiguatedDirectCommands": {
-    "similarItems": [
-      "show similar items",
-      "show me similar items",
-      "similar items",
-      "find similar items",
-      "show related items",
-      "show me related items",
-      "related items",
-      "more like this"
-    ]
+    "similarItems": {
+      "description": "Find items similar to the currently open item.",
+      "commands": [
+        "show similar items",
+        "show me similar items",
+        "similar items",
+        "find similar items",
+        "show related items",
+        "show me related items",
+        "related items",
+        "more like this"
+      ]
+    }
   }
 }
