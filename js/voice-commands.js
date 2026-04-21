@@ -106,9 +106,26 @@
     return map;
   }
 
+  function isWildcardPhrase(phrase) {
+    return typeof phrase === "string" && phrase.includes("*");
+  }
+
   function registerBaseCommands() {
-    for (const [name, phrases] of Object.entries(commandPhrases)) {
-      annyang.addCommands(buildCommandMap(phrases, HANDLERS[name]));
+    const entries = Object.entries(commandPhrases);
+
+    // Prioritize exact phrases globally so they win over parameterized patterns.
+    for (const [name, phrases] of entries) {
+      const exactPhrases = phrases.filter((phrase) => !isWildcardPhrase(phrase));
+      if (exactPhrases.length) {
+        annyang.addCommands(buildCommandMap(exactPhrases, HANDLERS[name]));
+      }
+    }
+
+    for (const [name, phrases] of entries) {
+      const wildcardPhrases = phrases.filter(isWildcardPhrase);
+      if (wildcardPhrases.length) {
+        annyang.addCommands(buildCommandMap(wildcardPhrases, HANDLERS[name]));
+      }
     }
   }
 
@@ -579,6 +596,26 @@
     return "";
   }
 
+  function isSimilarItemsAlias(text) {
+    const normalized = normalize(text);
+    return [
+      "similar items",
+      "similar item",
+      "related items",
+      "related item",
+      "more like this"
+    ].includes(normalized);
+  }
+
+  function handleSearchCommand(rawQuery) {
+    const query = sanitize(rawQuery || "");
+    if (isSimilarItemsAlias(query)) {
+      openSimilarItems();
+      return;
+    }
+    window.location.replace("/pages/scroll.html?q=" + encodeURIComponent(query));
+  }
+
   /* -----------------------------------------------
      Handler Map
      ----------------------------------------------- */
@@ -595,7 +632,7 @@
     openCurrentItemOverlay:  () => openItemOverlay(),
     closeItemOverlay:        () => closeItemOverlay(),
     creatorCollectionSearch: c => openCreatorCollection(c),
-    search:                  q => window.location.replace("/pages/scroll.html?q=" + encodeURIComponent(q || "")),
+    search:                  q => handleSearchCommand(q),
     openItemOnPage:          n => openItemFromPage(n),
     objectExplanation:       n => explainWithDisambiguation(n),
     similarItems:            () => openSimilarItems()

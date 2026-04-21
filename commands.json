@@ -147,9 +147,11 @@
   "disambiguatedDirectCommands": {
     "similarItems": [
       "show similar items",
+      "show me similar items",
       "similar items",
       "find similar items",
       "show related items",
+      "show me related items",
       "related items",
       "more like this"
     ]
