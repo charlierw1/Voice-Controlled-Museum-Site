@@ -45,24 +45,65 @@
   let clarificationState = null;
   let clarificationToken = 0;
   let overlayElement = null;
+  let escapeCommandPhrases = [];
 
   /* -----------------------------------------------
      Speech Utilities
      ----------------------------------------------- */
+
+  let isSpeaking = false;
+
+  function setSpeaking(active) {
+    isSpeaking = active;
+    const svg = document.querySelector(".mic svg");
+    if (!svg) return;
+    if (active) {
+      svg.classList.remove("listening");
+      svg.classList.add("speaking");
+    } else {
+      svg.classList.remove("speaking");
+    }
+  }
 
   function speak(text, onComplete) {
     if (!text) { onComplete?.(); return; }
     if (window.speechSynthesis && typeof SpeechSynthesisUtterance === "function") {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.onend = () => onComplete?.();
-      utterance.onerror = () => onComplete?.();
+      utterance.onstart = () => {
+        unregisterBaseCommands();
+        annyang.abort();
+        setSpeaking(true);
+        const escCmds = {};
+        (commandPhrases.cancel || []).forEach(p => { escCmds[p] = () => interruptSpeech(() => HANDLERS.cancel()); });
+        (commandPhrases.help || []).forEach(p => { escCmds[p] = () => interruptSpeech(() => HANDLERS.help()); });
+        escapeCommandPhrases = Object.keys(escCmds);
+        annyang.addCommands(escCmds);
+        annyang.start();
+      };
+      utterance.onend = () => { endSpeaking(); onComplete?.(); };
+      utterance.onerror = () => { endSpeaking(); onComplete?.(); };
       window.speechSynthesis.speak(utterance);
       return;
     }
     onComplete?.();
   }
 
+  function interruptSpeech(fn) {
+    window.speechSynthesis.cancel();
+    endSpeaking();
+    fn();
+  }
+
+  function endSpeaking() {
+    if (escapeCommandPhrases.length) {
+      annyang.removeCommands(escapeCommandPhrases);
+      escapeCommandPhrases = [];
+    }
+    setSpeaking(false);
+    registerBaseCommands();
+    annyang.start();
+  }
   function sanitize(input) {
     return typeof input === "string"
       ? input.trim().replace(/^[\s,.;:!?-]+|[\s,.;:!?-]+$/g, "").replace(/\s+/g, " ")

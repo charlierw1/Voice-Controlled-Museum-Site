@@ -115,6 +115,11 @@ body:not(.collection-page):not(.item-page):not(.scroll-page) main:not(.help-page
   animation: micGlowEaseIn 0.8s ease-in forwards, micGlowPulse 0.6s ease-in-out 0.8s infinite;
 }
 
+.mic svg.speaking {
+  fill: #ffffff;
+  animation: micGlowSpeakingEaseIn 0.8s ease-in forwards, micGlowSpeakingPulse 0.6s ease-in-out 0.8s infinite;
+}
+
 @keyframes micGlowEaseIn {
   0% {
     filter: drop-shadow(0 0 0em #ffffff) drop-shadow(0 0 0em #5cc9ff);
@@ -130,6 +135,24 @@ body:not(.collection-page):not(.item-page):not(.scroll-page) main:not(.help-page
   }
   50% {
     filter: drop-shadow(0 0 1em #ffffff) drop-shadow(0 0 1.5em #5cc9ff);
+  }
+}
+
+@keyframes micGlowSpeakingEaseIn {
+  0% {
+    filter: drop-shadow(0 0 0em #ffffff) drop-shadow(0 0 0em #ff4444);
+  }
+  100% {
+    filter: drop-shadow(0 0 0.5em #ffffff) drop-shadow(0 0 1em #ff4444);
+  }
+}
+
+@keyframes micGlowSpeakingPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 0.5em #ffffff) drop-shadow(0 0 1em #ff4444);
+  }
+  50% {
+    filter: drop-shadow(0 0 1em #ffffff) drop-shadow(0 0 1.5em #ff4444);
   }
 }
 
