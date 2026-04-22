@@ -965,25 +965,7 @@ header {
   margin-top: -0.45rem;
 }
 
-.help-page section:nth-child(1) {
-  z-index: 10;
-}
 
-.help-page section:nth-child(2) {
-  z-index: 9;
-}
-
-.help-page section:nth-child(3) {
-  z-index: 8;
-}
-
-.help-page section:nth-child(4) {
-  z-index: 7;
-}
-
-.help-page section:nth-child(5) {
-  z-index: 6;
-}
 
 .help-tab-image {
   width: clamp(10rem, 30vw, 16rem);

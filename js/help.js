@@ -18,7 +18,8 @@ window.addEventListener("load", async () => {
             return;
         }
 
-        const sections = commandEntries.map(buildCommandSection);
+        const total = commandEntries.length;
+        const sections = commandEntries.map((entry, i) => buildCommandSection(entry, total - i));
         host.replaceChildren(...sections);
     } catch (error) {
         console.error("Failed to render help commands", error);
@@ -71,8 +72,9 @@ function formatCommandName(name) {
         .replace(/^\w/, (char) => char.toUpperCase());
 }
 
-function buildCommandSection(entry) {
+function buildCommandSection(entry, zIndex) {
     const section = document.createElement("section");
+    if (zIndex !== undefined) section.style.zIndex = zIndex;
 
     const wrapper = document.createElement("div");
     wrapper.className = "help-command-block";
