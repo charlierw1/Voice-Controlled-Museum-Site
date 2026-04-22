@@ -149,6 +149,7 @@
   }
 
   function scrollPage(direction) {
+    speak(direction < 0 ? "Scrolling up." : "Scrolling down.");
     if (document.body.classList.contains("scroll-page") && window.scrollPageController?.scroll) {
       window.scrollPageController.scroll(direction);
       return;
@@ -162,6 +163,7 @@
       direction < 0 ? ".item-carousel-arrow-left" : ".item-carousel-arrow-right"
     );
     if (itemArrow && !itemArrow.disabled && clickElement(itemArrow)) {
+      speak(direction < 0 ? "Previous item." : "Next item.");
       setTimeout(updateOverlayIfOpen, 360);
       return;
     }
@@ -169,7 +171,10 @@
     const arrows = document.querySelectorAll(".carousel .arrow");
     if (arrows.length >= 2) {
       const target = direction < 0 ? arrows[0] : arrows[arrows.length - 1];
-      if (target.getAttribute("aria-disabled") !== "true" && clickElement(target)) return;
+      if (target.getAttribute("aria-disabled") !== "true" && clickElement(target)) {
+        speak(direction < 0 ? "Previous item." : "Next item.");
+        return;
+      }
     }
 
     speak("There is no carousel movement available right now.");
@@ -512,6 +517,7 @@
   function openCreatorCollection(rawName) {
     const name = sanitize(rawName);
     if (!name) { speak("Please say the creator whose collection you want to open."); return; }
+    speak(`Opening collection for ${name}.`);
     window.location.replace("/pages/collection.html?creator=" + encodeURIComponent(name));
   }
 
@@ -670,6 +676,7 @@
       openSimilarItems();
       return;
     }
+    speak(`Searching for ${query}.`);
     window.location.replace("/pages/scroll.html?q=" + encodeURIComponent(query));
   }
 
@@ -678,8 +685,8 @@
      ----------------------------------------------- */
 
   const HANDLERS = {
-    home:                    () => window.location.replace("/index.html"),
-    help:                    () => window.location.replace("/pages/help.html"),
+    home:                    () => { speak("Going to home page."); window.location.replace("/index.html"); },
+    help:                    () => { speak("Opening help."); window.location.replace("/pages/help.html"); },
     cancel:                  () => cancelCurrentAction(),
     carouselLeft:            () => moveCarousel(-1),
     carouselRight:           () => moveCarousel(1),
