@@ -1,5 +1,7 @@
 const objectURL = "https://api.vam.ac.uk/v2/museumobject/"
 const searchURL = "https://api.vam.ac.uk/v2/objects/search?q="
+const objectSearchURL = "https://api.vam.ac.uk/v2/objects/search?"
+const categoryClusterURL = "https://api.vam.ac.uk/v2/objects/clusters/category/search?"
 
 const API_MIN_INTERVAL_MS = 1000;
 const API_DAILY_LIMIT = 3000;

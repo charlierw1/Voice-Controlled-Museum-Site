@@ -26,6 +26,15 @@
           "display helpful commands",
           "help"
         ]
+      },
+      "listCategories": {
+        "description": "Show a general list of item categories on the scroll page.",
+        "commands": [
+          "categories",
+          "show categories",
+          "list categories",
+          "what categories are there"
+        ]
       }
     },
     "pageCommands": {

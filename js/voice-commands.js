@@ -21,6 +21,7 @@
   const COMMAND_DEFS = {
     home:                    ["directCommands", "navigation", "home"],
     help:                    ["directCommands", "navigation", "help"],
+    listCategories:          ["directCommands", "navigation", "listCategories"],
     cancel:                  ["directCommands", "pageCommands", "cancel"],
     carouselLeft:            ["directCommands", "pageCommands", "carouselLeft"],
     carouselRight:           ["directCommands", "pageCommands", "carouselRight"],
@@ -686,6 +687,11 @@
     window.location.replace("/pages/collection.html?creator=" + encodeURIComponent(name));
   }
 
+  function openGeneralCategories() {
+    speak("Showing categories.");
+    window.location.replace("/pages/scroll.html?mode=categories");
+  }
+
   function scoreTitleMatch(normalizedTitle, normalizedTarget, targetTokens) {
     if (!normalizedTitle || !normalizedTarget) return 0;
     if (normalizedTitle === normalizedTarget) return 1000;
@@ -852,6 +858,7 @@
   const HANDLERS = {
     home:                    () => { speak("Going to home page."); window.location.replace("/index.html"); },
     help:                    () => { speak("Opening help."); window.location.replace("/pages/help.html"); },
+    listCategories:          () => openGeneralCategories(),
     cancel:                  () => cancelCurrentAction(),
     carouselLeft:            () => moveCarousel(-1),
     carouselRight:           () => moveCarousel(1),

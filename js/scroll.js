@@ -4,8 +4,13 @@ const SCROLL_BUFFER_ROWS = 1;
 const SCROLL_FETCH_SIZE = 24;
 const SCROLL_ANIMATION_MS = 420;
 const SCROLL_PEEK_RATIO = 0.34;
+const CATEGORY_PREVIEW_LIMIT = 8;
 
 function getScrollImageUrl(record) {
+    if (record?._previewImageUrl) {
+        return record._previewImageUrl;
+    }
+
     const iiifBase = record?._images?._iiif_image_base_url;
     if (iiifBase) {
         return `${iiifBase}full/900,/0/default.jpg`;
@@ -14,6 +19,9 @@ function getScrollImageUrl(record) {
 }
 
 function getScrollDisplayTitle(record) {
+    if (record?._displayTitle?.trim()) {
+        return record._displayTitle.trim();
+    }
     if (record?._primaryTitle?.trim()) {
         return record._primaryTitle.trim();
     }
@@ -63,7 +71,7 @@ function applyRecordToSlot(slot, record) {
     slot.removeAttribute("aria-disabled");
     slot.tabIndex = 0;
 
-    if (!record?.systemNumber) {
+    if (!record?.systemNumber && !record?._customHref) {
         slot.removeAttribute("href");
         slot.setAttribute("aria-disabled", "true");
         slot.tabIndex = -1;
@@ -80,7 +88,16 @@ function applyRecordToSlot(slot, record) {
         card.style.backgroundRepeat = "no-repeat";
     }
 
+    if (record?._isCategory) {
+        card.classList.add("scroll-card-placeholder");
+    }
+
     label.textContent = getScrollDisplayTitle(record);
+    if (record?._customHref) {
+        slot.href = record._customHref;
+        return;
+    }
+
     slot.href = `item.html?id=${encodeURIComponent(record.systemNumber)}`;
 }
 
@@ -127,8 +144,22 @@ window.addEventListener("load", () => {
 
     const params = new URLSearchParams(window.location.search);
     const query = params.get("q")?.trim() || "";
+    const mode = params.get("mode")?.trim() || "search";
+    const categoryId = params.get("id_category")?.trim() || "";
+    const categoryLabel = params.get("label")?.trim() || "";
+
+    function getInitialEmptyStateLabel() {
+        if (mode === "categories") {
+            return "No category results found";
+        }
+        if (mode === "category-items") {
+            return categoryId ? "No items found for category" : "No category selected";
+        }
+        return query ? "No results found" : "No search query";
+    }
+
     const state = {
-        emptyStateLabel: query ? "No results found" : "No search query",
+        emptyStateLabel: getInitialEmptyStateLabel(),
         isAnimating: false,
         records: [],
         topRowIndex: 0,
@@ -453,6 +484,166 @@ window.addEventListener("load", () => {
         requestAnimationFrame(frame);
     }
 
+    function extractCategoryTerms(data) {
+        if (Array.isArray(data)) {
+            return data;
+        }
+        if (Array.isArray(data?.terms)) {
+            return data.terms;
+        }
+        if (Array.isArray(data?.clusters?.category?.terms)) {
+            return data.clusters.category.terms;
+        }
+        return [];
+    }
+
+    function buildCategoryCardRecords(terms) {
+        return terms
+            .map((term, index) => {
+                const value = String(
+                    term?.value
+                    || term?.text
+                    || term?.label
+                    || term?.name
+                    || ""
+                ).trim();
+
+                if (!value) {
+                    return null;
+                }
+
+                const id = String(term?.id || term?.identifier || "").trim();
+                const count = Number(term?.count);
+                const displayTitle = Number.isFinite(count) && count > 0
+                    ? `${value} (${count})`
+                    : value;
+
+                const href = id
+                    ? `/pages/scroll.html?mode=category-items&id_category=${encodeURIComponent(id)}&label=${encodeURIComponent(value)}`
+                    : `/pages/scroll.html?mode=search&q=${encodeURIComponent(value)}`;
+
+                return {
+                    systemNumber: id || `category-${index}-${value.toLowerCase().replace(/\s+/g, "-")}`,
+                    _displayTitle: displayTitle,
+                    _customHref: href,
+                    _isCategory: true,
+                    _categoryId: id
+                };
+            })
+            .filter(Boolean);
+    }
+
+    async function hydrateCategoryPreviewImages(records) {
+        if (!Array.isArray(records) || !records.length) {
+            return;
+        }
+
+        const candidates = records
+            .filter((record) => record?._isCategory && record?._categoryId)
+            .slice(0, CATEGORY_PREVIEW_LIMIT);
+
+        for (const record of candidates) {
+            if (record._previewImageUrl) {
+                continue;
+            }
+
+            try {
+                const queryString = `id_category=${encodeURIComponent(record._categoryId)}&page_size=1&images_exist=1`;
+                const data = await getData(objectSearchURL, queryString);
+                const firstRecord = Array.isArray(data?.records) ? data.records[0] : null;
+                const previewImageUrl = getScrollImageUrl(firstRecord || {});
+                if (previewImageUrl) {
+                    record._previewImageUrl = previewImageUrl;
+                    renderVisibleRows();
+                }
+            } catch (error) {
+                console.error("Failed to load category preview image", error);
+            }
+        }
+    }
+
+    function loadSearchResults() {
+        if (!query) {
+            state.records = [];
+            state.topRowIndex = 0;
+            state.emptyStateLabel = "No search query";
+            renderVisibleRows();
+            return;
+        }
+
+        const queryString = `${encodeURIComponent(query)}&page_size=${SCROLL_FETCH_SIZE}`;
+        getData(searchURL, queryString).then((data) => {
+            state.records = data?.records ?? [];
+            state.topRowIndex = 0;
+            state.emptyStateLabel = state.records.length ? "No result" : "No results found";
+            renderVisibleRows();
+        }).catch((error) => {
+            console.error("Failed to populate scroll cards", error);
+            state.records = [];
+            state.emptyStateLabel = "Could not load results";
+            renderVisibleRows();
+        });
+    }
+
+    function loadCategoryGroups() {
+        if (typeof getData !== "function" || typeof categoryClusterURL !== "string") {
+            loadSearchResults();
+            return;
+        }
+
+        const queryString = query
+            ? `q=${encodeURIComponent(query)}&cluster_size=${SCROLL_FETCH_SIZE}`
+            : `cluster_size=${SCROLL_FETCH_SIZE}`;
+        getData(categoryClusterURL, queryString).then((data) => {
+            const terms = extractCategoryTerms(data);
+            state.records = buildCategoryCardRecords(terms);
+            state.topRowIndex = 0;
+            state.emptyStateLabel = state.records.length ? "No result" : "No category results found";
+            renderVisibleRows();
+            if (typeof objectSearchURL === "string" && objectSearchURL) {
+                hydrateCategoryPreviewImages(state.records);
+            }
+        }).catch((error) => {
+            console.error("Failed to load categories", error);
+            state.records = [];
+            state.emptyStateLabel = "Could not load categories";
+            renderVisibleRows();
+        });
+    }
+
+    function loadCategoryItems() {
+        if (!categoryId) {
+            state.records = [];
+            state.topRowIndex = 0;
+            state.emptyStateLabel = "No category selected";
+            renderVisibleRows();
+            return;
+        }
+
+        if (typeof getData !== "function" || typeof objectSearchURL !== "string") {
+            state.records = [];
+            state.topRowIndex = 0;
+            state.emptyStateLabel = "Could not load category items";
+            renderVisibleRows();
+            return;
+        }
+
+        const queryString = `id_category=${encodeURIComponent(categoryId)}&page_size=${SCROLL_FETCH_SIZE}`;
+        getData(objectSearchURL, queryString).then((data) => {
+            state.records = data?.records ?? [];
+            state.topRowIndex = 0;
+            state.emptyStateLabel = state.records.length
+                ? "No result"
+                : (categoryLabel ? `No items found for ${categoryLabel}` : "No items found for category");
+            renderVisibleRows();
+        }).catch((error) => {
+            console.error("Failed to load category items", error);
+            state.records = [];
+            state.emptyStateLabel = "Could not load category items";
+            renderVisibleRows();
+        });
+    }
+
     buttons.forEach((button) => {
         button.addEventListener("click", () => {
             const direction = Number(button.dataset.direction || "0");
@@ -474,19 +665,12 @@ window.addEventListener("load", () => {
     renderVisibleRows();
     animateInitialDraw(1400);
 
-    if (query) {
-        const queryString = `${encodeURIComponent(query)}&page_size=${SCROLL_FETCH_SIZE}`;
-        getData(searchURL, queryString).then((data) => {
-            state.records = data?.records ?? [];
-            state.topRowIndex = 0;
-            state.emptyStateLabel = state.records.length ? "No result" : "No results found";
-            renderVisibleRows();
-        }).catch((error) => {
-            console.error("Failed to populate scroll cards", error);
-            state.records = [];
-            state.emptyStateLabel = "Could not load results";
-            renderVisibleRows();
-        });
+    if (mode === "categories") {
+        loadCategoryGroups();
+    } else if (mode === "category-items") {
+        loadCategoryItems();
+    } else {
+        loadSearchResults();
     }
 
     function handleLayoutChange() {
