@@ -169,6 +169,17 @@
           "show *object item"
         ]
       },
+      "openItemByPosition": {
+        "description": "Open a visible scroll-page item by spoken position and side.",
+        "commands": [
+          "open the *selection from the *side",
+          "open *selection from *side",
+          "open *selection down from the *side",
+          "open the *selection down from the *side",
+          "open the *selection down the *side",
+          "open *selection down the *side"
+        ]
+      },
       "goToPage": {
         "description": "Find and navigate directly to the best matching object item page.",
         "commands": [

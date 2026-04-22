@@ -31,6 +31,7 @@
     closeItemOverlay:        ["directCommands", "pageCommands", "closeItemOverlay"],
     creatorCollectionSearch: ["parameterizedCommands", "navigation", "creatorCollectionSearch"],
     search:                  ["parameterizedCommands", "navigation", "search"],
+    openItemByPosition:      ["parameterizedCommands", "navigation", "openItemByPosition"],
     openItemOnPage:          ["parameterizedCommands", "navigation", "openItemOnPage"],
     goToPage:                ["parameterizedCommands", "navigation", "goToPage"],
     objectExplanation:       ["disambiguatedParameterizedCommands", "objectExplanation"],
@@ -450,6 +451,129 @@
     };
   }
 
+  function parseOrdinalIndex(text) {
+    if (!text) return -1;
+
+    const normalizedText = normalize(text);
+    if (!normalizedText) return -1;
+
+    const digitMatch = normalizedText.match(/\b(\d+)(?:st|nd|rd|th)?\b/);
+    if (digitMatch) {
+      const value = Number(digitMatch[1]);
+      return Number.isFinite(value) && value > 0 ? value - 1 : -1;
+    }
+
+    const ordinalMap = {
+      first: 0,
+      second: 1,
+      third: 2,
+      fourth: 3,
+      fifth: 4,
+      sixth: 5,
+      seventh: 6,
+      eighth: 7,
+      ninth: 8,
+      tenth: 9
+    };
+
+    for (const token of normalizedText.split(" ")) {
+      if (ordinalMap[token] !== undefined) return ordinalMap[token];
+      if (CARDINAL_TO_INDEX[token] !== undefined) return CARDINAL_TO_INDEX[token];
+    }
+
+    return -1;
+  }
+
+  function parseScrollPositionSelection(raw) {
+    const text = normalize(raw);
+    if (!text) return null;
+
+    const side = text.includes(" right") || text.startsWith("right ") || text.endsWith(" right")
+      ? "right"
+      : (text.includes(" left") || text.startsWith("left ") || text.endsWith(" left") ? "left" : "");
+
+    const ordinalIndex = parseOrdinalIndex(text);
+    if (!side || ordinalIndex < 0) return null;
+
+    const hasPositionalContext = /\b(from|down|up|top|bottom)\b/.test(text);
+    if (!hasPositionalContext) return null;
+
+    const direction = /\b(up|bottom)\b/.test(text) ? "up" : "down";
+    return { side, direction, ordinalIndex };
+  }
+
+  function getScrollVisibleCandidatesBySide() {
+    const panels = Array.from(document.querySelectorAll(".scroll-page .scroll-panel"));
+    const bySide = { left: [], right: [] };
+
+    panels.forEach((panel, panelIndex) => {
+      const side = (panel.dataset.column === "1" || panelIndex === 1) ? "right" : "left";
+      const anchors = Array.from(panel.querySelectorAll(".scroll-panel-track > a.scroll-card-focus"))
+        .filter(anchor => anchor.getAttribute("aria-disabled") !== "true" && !!anchor.getAttribute("href"));
+
+      anchors
+        .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)
+        .forEach((anchor) => {
+          const label = sanitize(anchor.querySelector("span")?.textContent || anchor.getAttribute("aria-label") || "");
+          bySide[side].push({
+            anchor,
+            href: anchor.href || "",
+            label
+          });
+        });
+    });
+
+    return bySide;
+  }
+
+  function openItemByScrollPosition(rawSelection) {
+    if (!document.body.classList.contains("scroll-page")) return false;
+
+    const selection = parseScrollPositionSelection(rawSelection);
+    if (!selection) return false;
+
+    const bySide = getScrollVisibleCandidatesBySide();
+    const candidates = bySide[selection.side] || [];
+
+    if (!candidates.length) {
+      speak(`I could not find visible items on the ${selection.side}.`);
+      return true;
+    }
+
+    const targetIndex = selection.direction === "up"
+      ? (candidates.length - 1 - selection.ordinalIndex)
+      : selection.ordinalIndex;
+
+    if (targetIndex < 0 || targetIndex >= candidates.length) {
+      speak(`There are only ${candidates.length} visible items on the ${selection.side}.`);
+      return true;
+    }
+
+    const target = candidates[targetIndex];
+    speak(`Opening ${target.label || "selected item"}.`);
+    window.location.replace(target.href);
+    return true;
+  }
+
+  function openItemByPosition(rawSelection, rawSide) {
+    if (!document.body.classList.contains("scroll-page")) {
+      speak("This command works on the scroll page.");
+      return;
+    }
+
+    const selection = sanitize(rawSelection);
+    const side = sanitize(rawSide);
+    if (!selection || !side) {
+      speak("Please say something like open the third down from the right.");
+      return;
+    }
+
+    const composedSelection = `${selection} from the ${side}`;
+    if (!openItemByScrollPosition(composedSelection)) {
+      speak("Please say something like open the third down from the right.");
+    }
+  }
+
   function openItemFromPage(rawName) {
     const name = sanitize(rawName);
     const normalizedName = normalize(name);
@@ -738,6 +862,7 @@
     closeItemOverlay:        () => closeItemOverlay(),
     creatorCollectionSearch: c => openCreatorCollection(c),
     search:                  q => handleSearchCommand(q),
+    openItemByPosition:      (selection, side) => openItemByPosition(selection, side),
     openItemOnPage:          n => openItemFromPage(n),
     goToPage:                n => goToPageByBestMatch(n),
     objectExplanation:       n => explainWithDisambiguation(n),
