@@ -67,8 +67,20 @@ function initializeItemCarousel(record, metaImages) {
         return;
     }
 
-    const leftArrow = document.querySelector(".item-carousel-arrow-left");
-    const rightArrow = document.querySelector(".item-carousel-arrow-right");
+    // No arrow buttons anymore; enable keyboard and voice control
+    window.moveCarousel = function(direction) {
+        // direction: -1 for right/next, 1 for left/prev (to match rotateItemCarousel)
+        rotateItemCarousel(state, direction);
+    };
+
+    // Optional: Keyboard support for left/right arrows
+    document.addEventListener("keydown", function(e) {
+        if (e.key === "ArrowLeft") {
+            window.moveCarousel(1);
+        } else if (e.key === "ArrowRight") {
+            window.moveCarousel(-1);
+        }
+    });
     const imageUrls = getItemImageUrls(record, metaImages);
     const mainTitle = getItemTitle(record);
     const itemDescription = getItemDescription(record);
@@ -104,8 +116,7 @@ function initializeItemCarousel(record, metaImages) {
     renderCarouselState(state);
     preloadAround(state);
 
-    wireItemArrow(leftArrow, () => rotateItemCarousel(state, 1));
-    wireItemArrow(rightArrow, () => rotateItemCarousel(state, -1));
+    // Arrow button wiring removed
 }
 
 function wireItemArrow(button, onActivate) {

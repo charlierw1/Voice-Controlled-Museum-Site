@@ -202,15 +202,15 @@
   }
 
   function moveCarousel(direction) {
-    const itemArrow = document.querySelector(
-      direction < 0 ? ".item-carousel-arrow-left" : ".item-carousel-arrow-right"
-    );
-    if (itemArrow && !itemArrow.disabled && clickElement(itemArrow)) {
-      speak(direction < 0 ? "Previous item." : "Next item.");
+    // On item-page, use window.moveCarousel if available
+    if (document.body.classList.contains("item-page") && typeof window.moveCarousel === "function") {
+      window.moveCarousel(direction);
+      speak(direction > 0 ? "Previous item." : "Next item.");
       setTimeout(updateOverlayIfOpen, 360);
       return;
     }
 
+    // Fallback for other carousels
     const arrows = document.querySelectorAll(".carousel .arrow");
     if (arrows.length >= 2) {
       const target = direction < 0 ? arrows[0] : arrows[arrows.length - 1];
