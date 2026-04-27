@@ -1,0 +1,530 @@
+User 1:
+
+Task1 find an item: 
+Look at item
+Item
+Show me item
+Item
+Show me item
+Go home
+Go to items
+Go item
+Item 
+Go item
+Commands help
+Item
+Go to item
+Show me item
+Scroll down
+Scroll down
+Show me item x3
+Open item (didnt pick up)
+Help (didnt pick up)
+Help page
+Go to help page
+Show me help page
+Show me commands
+Open commands help
+Help
+Scroll down
+Show me categories
+Show me designs
+Open designs
+1
+
+Task 2:
+
+show me beatrix potter
+Scroll down
+Show me bestrix potter collection
+Carousel right
+Scroll down
+Show me the tale of two bad mice
+
+Task 3:
+
+show me john lennon
+Open john lennon dead
+Go right
+Go right
+Scroll down
+Open carousel
+Open item
+Show me john lennon shot dead
+Open john lennon shot dead
+Go left
+Go right
+Scroll up
+Help
+Scroll down 
+Show me john lennon shot dead
+Open john lennon shot dead
+Read item list
+Read current item
+Scroll down x 3
+Show me john lennon shot dead
+Open john lennon shot dead
+Enlarge item
+Enlarge current item
+Help
+Scroll down
+Show me john lennon shot dead
+Open john lennon shot dead
+Enlarge current image
+Enlarge
+Close
+
+User 2:
+
+Task1: 
+Open estonian freedom
+
+Task2:
+
+open collections
+
+Back to home
+
+Collections
+
+Open Beatrix potter collection
+Open collection bestrix potter
+Open collection by beatrix potter collection
+
+Task 3:
+
+show me object john lennon shot dead poster
+Open object john lennon shot poster
+Show me object john lennon shit poster
+Show me john lennon shot poster
+Open john lennon shot desd
+Flip image, next image
+Next image
+Carousel next
+Arrow right
+Scroll
+Help
+Page down
+Page down
+Page down
+Go back
+Show john lennon shot dead
+Previous
+Search john lennon
+Show john lennon
+Find john lennon
+Show me john lennon shot dead
+Open john lennon shot dead
+Carousel left
+
+User 3:
+
+Task 1: 
+Open cars
+Open ceramics
+Open popular brownie stuttered
+Popular brownie open popular brownie
+Open award
+
+Task 2:
+
+go to collections
+Open collections
+Open bestrix potter collections
+Go to collections
+Open collections
+Beatrix potter
+
+Task3:
+
+scroll down
+Scroll up
+Next
+Next
+Next again
+Next
+Next
+Show me details
+Go back
+Show me image
+Help
+Scroll down
+Scroll down
+Read this page
+Read
+Read this page
+Read
+Scroll up
+Go up
+Enlarge
+Close 
+Close item
+
+User 4:
+
+Task 1:
+open award (picked up award)
+open popular brownie
+
+Task 2: 
+show me palmer cox
+show me works by palmer cox
+show me the palmer cox collection
+
+Task 3:
+
+show me the brownies the book
+
+open the brownies guide handbook
+
+tell me more about the brownie guide handbook (not how command is piped but good to know)
+
+first
+
+show me the second item on the brownie guide handbook
+
+show me vapes
+
+show me lost mary bm600 disposable vaahhp (imitating default window tts)
+
+expand the first result
+
+open the result
+
+open lost mary bm600 disposable vape
+
+show me the first item on this page
+
+open item 2
+
+open lost mary bm600 disposable vape
+
+show me bm600 disposable vape
+
+show me vape
+
+open 2
+
+open second artifact
+
+open vape (didn't trigger the clarification)
+
+tell me more
+
+tell me more about vape
+
+third
+
+what commands can i use
+
+what page should I go to next
+
+related pages
+
+help with commands
+
+commands help
+
+carousel left
+
+carousel right
+
+help
+
+scroll down x3
+
+show me vape
+
+open vape
+
+similar items
+
+open vape
+
+open overlay
+
+open item overlay
+
+
+User 5:
+
+Task 1:
+
+open popular tales x2 (failed)
+
+okays lets do something elses
+
+all right (next item)
+
+next item
+
+next item
+
+bruh
+
+next item
+
+open (on carousel item)
+
+view exhibit
+
+open open open popular tales
+
+view exhibit
+
+view populate tales open popular tales
+
+open popular tales
+
+Task 2:
+
+open maria edgeworth collection
+
+view maria edgeworth collection
+
+open maria edgeworth's collection
+
+open bryan Edwards collection
+
+view bryan Edwards collection
+
+Task 3:
+
+computer... take me to lost mary vape
+
+computer, what types of lost mary vapes are there
+
+computer, describe the lost mary vape
+
+give me the history of the lost mary bm600 disposable vape
+
+how much is it in sainsubureis
+
+where can I get one
+
+how many flavours are there
+
+if I vape while pregnant will my baby die
+
+what other types of vape are there
+
+help
+
+take me back to the menu
+
+take me back to the home page
+
+previous page
+
+lost mary vape
+
+take me "item"
+
+cool, take me to ps5
+
+take me to sainsburies 
+
+next image
+
+show me the next image
+
+show me iPhone 6
+
+open smart thermostat
+
+enlarge image
+
+minimise image
+
+
+User 6:
+
+
+task 1:
+
+scroll right
+
+open popular brownie
+
+commands help
+
+help
+
+go down
+
+go down
+
+go back
+
+already forgot command
+
+help
+
+scroll down
+
+scroll down
+
+go back
+
+search award
+
+go to popular brownie
+
+help
+
+show me award
+
+show me emmy award
+
+show me barbie tribute collection
+
+help
+
+hmm, scroll down
+
+scroll down
+
+go back
+
+open item
+
+help
+
+scroll down
+
+scroll down
+
+(screenshots help page)
+
+read current item
+
+enlarge
+
+close image
+
+go back
+
+read this item
+
+enlarge
+
+task 2:
+
+go back
+
+go back
+
+scroll right
+
+scroll right
+
+(checks commands screenshot)
+
+enlarge award
+
+show me award
+
+show me popular brownie
+
+brownie 127
+
+show me brownie 127
+
+open Robert prost
+
+open bottom left
+
+show me popular music and dancing weekly
+
+show me a list
+
+go back
+
+show me artist
+
+show me Robert
+
+show me the mendicant
+
+open the top left
+
+show me the top left
+
+show me hilltop by night
+
+show me items created by Robert
+
+task 3:
+
+go back
+
+enlarge
+
+search chair
+
+show me chair
+
+open ply chair
+
+open laser chair
+
+read it to me
+
+read current item
+
+help
+
+scroll down
+
+scroll down
+
+scroll down
+
+go back
+
+show me laser chair
+
+enlarge
+
+show me laser chair
+
+open laser chair
+
+show similar items
+
+show me laser chair
+
+show me laser chair
+
+show me laser chair
+
+open laser chair
+
+enlarge
+
+close
+
+help
+
+scroll down
+
+scroll down
+
+scroll down
+
+scroll down
+
+open laser chair
+
+search laser chair
+
+show me chair
+
+open laser chair
+
+ive forgot the command
+
+explain this
+
+
+
