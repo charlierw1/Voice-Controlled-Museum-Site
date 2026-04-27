@@ -204,8 +204,8 @@
   function moveCarousel(direction) {
     // On item-page, use window.moveCarousel if available
     if (document.body.classList.contains("item-page") && typeof window.moveCarousel === "function") {
-      window.moveCarousel(direction);
-      speak(direction > 0 ? "Previous item." : "Next item.");
+      window.moveCarousel(-direction);
+      speak(direction < 0 ? "Previous item." : "Next item.");
       setTimeout(updateOverlayIfOpen, 360);
       return;
     }

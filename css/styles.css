@@ -57,7 +57,7 @@ body:not(.collection-page):not(.item-page):not(.scroll-page) main:not(.help-page
 .mic {
   position: fixed;
   left: 50%;
-  bottom: 0;
+  bottom: env(safe-area-inset-bottom, 0px);
   transform: translate(-50%, 50%);
   z-index: 950;
   display: flex;
@@ -1165,6 +1165,7 @@ footer {
   align-items: center;
   gap: 0.75rem;
   padding: 0.35em 0.9em;
+  padding-bottom: calc(0.35em + env(safe-area-inset-bottom, 0px));
   background: rgba(8, 10, 12, 0.9);
   border-top: 1px solid #000000;
   backdrop-filter: blur(4px);
@@ -1198,6 +1199,7 @@ footer a {
     align-items: end;
     gap: 0.35rem 0.55rem;
     padding: 0.32em 0.7em;
+    padding-bottom: calc(0.32em + env(safe-area-inset-bottom, 0px));
   }
 
   footer p,
