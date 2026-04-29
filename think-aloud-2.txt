@@ -526,5 +526,671 @@ ive forgot the command
 
 explain this
 
+User 7:
 
+can i see the fossils of a spinosaurus
+
+Wants to open help
+
+Show categories
+
+Please
+
+Caregories
+
+Do you scroll
+
+More
+
+Cant see the 5 and 6 items
+
+Drawings
+
+Show drawings
+
+Show photographs 
+
+Categories 
+
+Scroll down x2
+
+This is a bit tedious
+
+Entertainment and leisure
+
+Show me something
+
+Show me a list of portraits
+
+Show me bones
+
+Show me monarchs
+
+Scroll down
+
+Tell me about h beard collection
+
+Scroll down x6
+
+Tell me more about print
+
+Second
+
+Task 2:
+
+show me picture painted my van gogh
+
+Show me summary of van gogh
+
+Can i have details on van gogh
+
+Show me people
+
+Give me info on van gogh
+
+Show me info on van gogh
+
+Show me info about van gogh
+
+Show me biography of van gogh
+
+Task 3:
+
+show me paintings 
+
+Show me david bowie as the elephant man
+
+Give me information on david bowie three times
+
+Enlarge david bowie three times
+
+Show me information on david bowie
+
+Guitar
+
+Open guitar
+
+Can you read
+
+Read
+
+Read text
+
+Enlarge image
+
+Close
+
+Rotate
+
+Enlarge
+
+Next
+
+Next
+
+Next
+
+Close
+
+Next
+
+Okay i dont need to be on it to rotste it
+
+Explain
+
+Read words
+
+Explain
+
+Enlighten
+
+Read description
+
+Tell me more
+
+Help
+
+Show me david bowie
+
+Open tshirt
+
+Read aloud
+
+Tell me more didnt work
+
+Resd didnt work
+
+Explain
+
+Elaborate
+
+Show me more
+
+Open sir thomas more
+
+Open print
+
+Show me david bowie
+
+Show me alice cooper
+
+Open telegraph less
+
+Open poster 
+
+One
+
+Show me david bowie
+
+Open guitar
+
+Scroll down
+
+Open t shirt
+
+Cant figure out this read command
+
+Say
+
+Read
+
+Speak
+
+Talk
+
+User 8:
+
+show me beatrix potter
+
+Show me beatrix potter
+
+Open a white mouse in a four poster bed
+
+Task 2:
+
+back to the main menu
+
+Back to artefacts
+
+Show me vincent van gogh art
+
+Back to home page
+
+Go to creators page
+
+Search for creators
+
+Artifact search
+
+Go to beatrix potter
+
+Show me Beatrix potter
+
+Back to home page
+
+Who is beatrix potter
+
+Commands help
+
+Scroll down x3
+
+Show me items created by beatrix potter
+
+Task 3:
+
+open the fairy caravan
+
+Tell me about it
+
+First
+
+Second item
+
+Second item
+
+Left on the carousel
+
+Help
+
+Down
+
+Down
+
+Scroll
+
+Scroll down
+
+Show me items created by beatrix potter
+
+Scroll down
+
+Open the tale of flopsy bunnies
+
+Open the tale of the flopsy bunnies
+
+Open peter rabbit
+
+Show me item 1
+
+Return to previous page
+
+Back
+
+Show me peter rabbit
+
+Open the game of peter rabbit
+
+Show me the second item
+
+Show me peter rabbit
+
+Open peter rabbit place card
+
+Peter rabbit place card
+
+Show me beatrix potter
+
+Show me items created by beatrix potter
+
+Open peter rabbit
+
+Left carousel
+
+Left carousel
+
+Next item
+
+Previous item
+
+Next item
+
+Next item
+
+Tell me more
+
+Tell me more
+
+Tell me about the tale of peter rabbit
+
+First
+
+Reads page but opens item unavailable page 
+
+Next item
+
+Next item
+
+Back
+
+User 9:
+
+Task 1:
+
+tell me about dead by daylight
+
+tell me about dead by daylight
+
+second, second
+
+second
+
+tell me about dead by daylight
+
+tell me about roblox
+
+tell me about the vietnam war
+
+tell me about the vietnam war tell me about the vietnam war
+
+third
+
+three
+
+Task 2:
+
+show me jaccquelin wilson
+
+open midnight
+
+midnight
+
+open midnight
+
+show me vincent van gogh
+
+self portraits
+
+open self portraits
+
+show me the creators page
+
+creators page
+
+creators
+
+tell me about vincent van gogh
+
+three
+
+three 
+
+three 
+
+find the creators page
+
+find me the creators page
+
+home page
+
+help, help
+
+home page
+
+creators
+
+creators page
+
+creator page
+
+adelle
+
+help
+
+down
+
+down scroll
+
+down
+
+list categories
+
+down a page down page
+
+help
+
+down scroll
+
+scroll down
+
+go down
+
+go down
+
+scroll down
+
+scroll down
+
+take me to danny dyer
+
+open queen elizibeth the second
+
+show me items created by
+
+show me items created by beatrix potter
+
+open beardsley aubrey vincent (in several horrifically wrong pronounciations)
+
+open aub aub or beardsley
+
+show me aubrey beardsley vincent
+
+go back to beatrix potter creator page
+
+show me artwork created by beatrix potter
+
+scroll down
+
+scroll down
+
+scroll down
+
+scroll down
+
+scroll down
+
+scroll down
+
+scroll down
+
+(gets annoyed at the inconsistency of the glowing mic)
+
+show me items crated by beatrix potter
+
+open. beardsley, aubrey vincent
+
+Task 3:
+
+open cover design
+
+enhance image
+
+zoom in
+
+zoom image
+
+enhance image
+
+enhance image
+
+enhance image
+
+close 
+
+help
+
+scroll down
+
+scroll down
+
+scroll down
+
+scroll down
+
+scroll down
+
+close
+
+back
+
+go back
+
+go back
+
+go back
+
+go back
+
+show me beardsly aubrey vincent
+
+show me beardsley aubrey vincent
+
+show me items created by aubrey vincent
+
+open bathyllus posturing (several mispronounciations)
+
+show my bathyllus posturing
+
+show me items created by aubrey vincent
+
+open bathyllus posturing
+
+show me bathyllus posturing
+
+show me van gogh
+
+open self portrait
+
+find similar items
+
+open drawing of pigs 
+
+enhance image
+
+tell me about this image
+
+cancel
+
+close
+
+cancel
+
+close
+
+help
+
+scroll down
+
+scroll down
+
+scroll down
+
+scroll down
+
+scroll down
+
+scroll down
+
+scroll down
+
+tell me more about the three little pigs
+
+what is the great wall of china
+
+tell me about the great wall of china 
+
+open the great wall of china
+
+open great wall of china
+
+four
+
+four
+
+four
+
+four
+
+four
+
+open great wall of china
+
+open great wall of china
+
+(gets annoyed)
+
+open great wall of china
+
+2
+
+1
+
+3
+
+1
+
+2
+
+2
+
+2
+
+open 2
+
+open the third one down
+
+open the second one on the left
+
+open the second from the right
+
+help
+
+scroll down
+
+scroll down
+
+scroll down
+
+scroll down
+
+scroll down
+
+scroll down
+
+move left
+
+previous item
+
+show me vincent van goghg
+
+show me vinvent van gogh
+
+show me items created by vincent van gogh
+
+show me items created by vincent van gogh
+
+show me items created by vincent van gogh
+
+open adam and eve
+
+open l'homme a la piped
+
+show me adam and eve
+
+openn adam and eve
+
+scroll down
+
+open adam and eve
+
+open adam and eve
+
+next item
+
+show me adam and eve
+
+open adam and eve
+
+open the first one
+
+open number 1
+
+open adam and eve
+
+open adam and eve
+
+one
+
+one
+
+one
+
+two
+
+three
+
+three
+
+next item
+
+previous item
+
+enhance eimage
+
+scroll down
+
+scroll down
+
+scroll down
+
+open vincent van gogh
+
+open vincent van gogh
+
+show me items created by aubrey vincent
+
+show me items created by aubrey vincent
+
+open the examination of the hearald
+
+read current item
 
