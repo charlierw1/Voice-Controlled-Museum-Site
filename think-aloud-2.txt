@@ -1194,3 +1194,188 @@ open the examination of the hearald
 
 read current item
 
+User 10:
+
+popular brownie
+
+open popular brownie
+
+open popular music
+
+open award
+
+award
+
+award
+
+commands help
+
+next
+
+latvian freedom
+
+popular brownie
+
+open popular brownie
+
+Task 2:
+
+back
+
+go back
+
+back 
+
+go back
+
+beatrix potter
+
+first
+
+first
+
+second
+
+second
+
+two
+
+beatrix potter
+
+beatrix potter
+
+beatrix potter
+
+estonia freedom
+
+award
+
+next
+
+next
+
+next
+
+next
+
+next
+
+open ethiopian songs
+
+next
+
+open beatrix potter
+
+open beatrix potter
+
+next
+
+commands help
+
+help
+
+scroll down
+
+take me to the menu
+
+take me back to the menu
+
+take me back
+
+take me back
+
+home page
+
+search for beatrix potter
+
+menu
+
+take me to the commands help
+
+show categories
+
+scroll down
+
+scroll down
+
+scroll up
+
+scroll up
+
+home
+
+help
+
+scroll down
+
+scroll down
+
+show me beatrix potter
+
+help
+
+scroll Down
+
+scroll down again
+
+scroll down
+
+scroll down
+
+take me to beatrix potter
+
+help
+
+scroll down
+
+scroll down
+
+scroll down
+
+Task 3:
+
+open the tale of two bad mice
+
+scroll down
+
+read it to me
+
+help
+
+scroll down
+
+go back
+
+scroll up
+
+scroll up
+
+show me items by beatrix potter
+
+show me water lillies
+
+back
+
+back back
+
+search beatrix potter
+
+read page
+
+annotate page
+
+what does this Say
+
+read box
+
+open image
+
+read information
+
+read
+
+open
+
+read
+
+read popular music and dancing weekly
