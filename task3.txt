@@ -1,0 +1,401 @@
+show me john lennon
+open john lennon dead
+go right
+go right
+scroll down
+open carousel
+open item
+show me john lennon shot dead
+open john lennon shot dead
+go left
+go right
+scroll up
+help
+scroll down
+show me john lennon shot dead
+open john lennon shot dead
+read item list
+read current item
+scroll down x 3
+show me john lennon shot dead
+open john lennon shot dead
+enlarge item
+enlarge current item
+help
+scroll down
+show me john lennon shot dead
+open john lennon shot dead
+enlarge current image
+enlarge
+close
+show me object john lennon shot dead poster
+open object john lennon shot poster
+show me object john lennon shit poster
+show me john lennon shot poster
+open john lennon shot desd
+flip image, next image
+next image
+carousel next
+arrow right
+scroll
+help
+page down
+page down
+page down
+go back
+show john lennon shot dead
+previous
+search john lennon
+show john lennon
+find john lennon
+show me john lennon shot dead
+open john lennon shot dead
+carousel left
+scroll down
+scroll up
+next
+next
+next again
+next
+next
+show me details
+go back
+show me image
+help
+scroll down
+scroll down
+read this page
+read
+read this page
+read
+scroll up
+go up
+enlarge
+close
+close item
+show me the brownies the book
+open the brownies guide handbook
+tell me more about the brownie guide handbook (not how command is piped but good to know)
+first
+show me the second item on the brownie guide handbook
+show me vapes
+show me lost mary bm600 disposable vaahhp (imitating default window tts)
+expand the first result
+open the result
+open lost mary bm600 disposable vape
+show me the first item on this page
+open item 2
+open lost mary bm600 disposable vape
+show me bm600 disposable vape
+show me vape
+open 2
+open second artifact
+open vape (didn't trigger the clarification)
+tell me more
+tell me more about vape
+third
+what commands can i use
+what page should i go to next
+related pages
+help with commands
+commands help
+carousel left
+carousel right
+help
+scroll down x3
+show me vape
+open vape
+similar items
+open vape
+open overlay
+open item overlay
+computer... take me to lost mary vape
+computer, what types of lost mary vapes are there
+computer, describe the lost mary vape
+give me the history of the lost mary bm600 disposable vape
+how much is it in sainsubureis
+where can i get one
+how many flavours are there
+if i vape while pregnant will my baby die
+what other types of vape are there
+help
+take me back to the menu
+take me back to the home page
+previous page
+lost mary vape
+take me "item"
+cool, take me to ps5
+take me to sainsburies
+next image
+show me the next image
+show me iphone 6
+open smart thermostat
+enlarge image
+minimise image
+go back
+enlarge
+search chair
+show me chair
+open ply chair
+open laser chair
+read it to me
+read current item
+help
+scroll down
+scroll down
+scroll down
+go back
+show me laser chair
+enlarge
+show me laser chair
+open laser chair
+show similar items
+show me laser chair
+show me laser chair
+show me laser chair
+open laser chair
+enlarge
+close
+help
+scroll down
+scroll down
+scroll down
+scroll down
+open laser chair
+search laser chair
+show me chair
+open laser chair
+ive forgot the command
+explain this
+show me paintings
+show me david bowie as the elephant man
+give me information on david bowie three times
+enlarge david bowie three times
+show me information on david bowie
+guitar
+open guitar
+can you read
+read
+read text
+enlarge image
+close
+rotate
+enlarge
+next
+next
+next
+close
+next
+okay i dont need to be on it to rotste it
+explain
+read words
+explain
+enlighten
+read description
+tell me more
+help
+show me david bowie
+open tshirt
+read aloud
+tell me more didnt work
+resd didnt work
+explain
+elaborate
+show me more
+open sir thomas more
+open print
+show me david bowie
+show me alice cooper
+open telegraph less
+open poster
+one
+show me david bowie
+open guitar
+scroll down
+open t shirt
+cant figure out this read command
+say
+read
+speak
+talk
+open the fairy caravan
+tell me about it
+first
+second item
+second item
+left on the carousel
+help
+down
+down
+scroll
+scroll down
+show me items created by beatrix potter
+scroll down
+open the tale of flopsy bunnies
+open the tale of the flopsy bunnies
+open peter rabbit
+show me item 1
+return to previous page
+back
+show me peter rabbit
+open the game of peter rabbit
+show me the second item
+show me peter rabbit
+open peter rabbit place card
+peter rabbit place card
+show me beatrix potter
+show me items created by beatrix potter
+open peter rabbit
+left carousel
+left carousel
+next item
+previous item
+next item
+next item
+tell me more
+tell me more
+tell me about the tale of peter rabbit
+first
+reads page but opens item unavailable page
+next item
+next item
+back
+open cover design
+enhance image
+zoom in
+zoom image
+enhance image
+enhance image
+enhance image
+close
+help
+scroll down
+scroll down
+scroll down
+scroll down
+scroll down
+close
+back
+go back
+go back
+go back
+go back
+show me beardsly aubrey vincent
+show me beardsley aubrey vincent
+show me items created by aubrey vincent
+open bathyllus posturing (several mispronounciations)
+show my bathyllus posturing
+show me items created by aubrey vincent
+open bathyllus posturing
+show me bathyllus posturing
+show me van gogh
+open self portrait
+find similar items
+open drawing of pigs
+enhance image
+tell me about this image
+cancel
+close
+cancel
+close
+help
+scroll down
+scroll down
+scroll down
+scroll down
+scroll down
+scroll down
+scroll down
+tell me more about the three little pigs
+what is the great wall of china
+tell me about the great wall of china
+open the great wall of china
+open great wall of china
+four
+four
+four
+four
+four
+open great wall of china
+open great wall of china
+open great wall of china
+2
+1
+3
+1
+2
+2
+2
+open 2
+open the third one down
+open the second one on the left
+open the second from the right
+help
+scroll down
+scroll down
+scroll down
+scroll down
+scroll down
+scroll down
+move left
+previous item
+show me vincent van goghg
+show me vinvent van gogh
+show me items created by vincent van gogh
+show me items created by vincent van gogh
+show me items created by vincent van gogh
+open adam and eve
+open l'homme a la piped
+show me adam and eve
+openn adam and eve
+scroll down
+open adam and eve
+open adam and eve
+next item
+show me adam and eve
+open adam and eve
+open the first one
+open number 1
+open adam and eve
+open adam and eve
+one
+one
+one
+two
+three
+three
+next item
+previous item
+enhance eimage
+scroll down
+scroll down
+scroll down
+open vincent van gogh
+open vincent van gogh
+show me items created by aubrey vincent
+show me items created by aubrey vincent
+open the examination of the hearald
+read current item
+open the tale of two bad mice
+scroll down
+read it to me
+help
+scroll down
+go back
+scroll up
+scroll up
+show me items by beatrix potter
+show me water lillies
+back
+back back
+search beatrix potter
+read page
+annotate page
+what does this say
+read box
+open image
+read information
+read
+open
+read
+read popular music and dancing weekly
