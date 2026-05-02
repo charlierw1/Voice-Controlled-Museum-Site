@@ -130,7 +130,7 @@ Task 2:
 
 go to collections
 Open collections
-Open bestrix potter collections
+Open beatrix potter collections
 Go to collections
 Open collections
 Beatrix potter
@@ -185,7 +185,7 @@ show me the second item on the brownie guide handbook
 
 show me vapes
 
-show me lost mary bm600 disposable vaahhp (imitating default window tts)
+show me lost mary bm600 disposable vaahhp (imitating default windows tts)
 
 expand the first result
 
