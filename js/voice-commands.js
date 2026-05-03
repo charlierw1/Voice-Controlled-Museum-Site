@@ -36,7 +36,7 @@
     openItemOnPage:          ["parameterizedCommands", "navigation", "openItemOnPage"],
     goToPage:                ["parameterizedCommands", "navigation", "goToPage"],
     objectExplanation:       ["disambiguatedParameterizedCommands", "objectExplanation"],
-    similarItems:            ["disambiguatedDirectCommands", "similarItems"]
+    similarItems:            ["directCommands", "pageCommands", "similarItems"]
   };
 
   /* -----------------------------------------------

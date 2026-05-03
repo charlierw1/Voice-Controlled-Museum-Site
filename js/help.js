@@ -31,7 +31,6 @@ function collectCommandEntries(config) {
     const buckets = [
         config?.directCommands,
         config?.parameterizedCommands,
-        config?.disambiguatedDirectCommands,
         config?.disambiguatedParameterizedCommands
     ];
 

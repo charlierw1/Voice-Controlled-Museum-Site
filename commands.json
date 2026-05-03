@@ -134,6 +134,19 @@
           "close item image",
           "close"
         ]
+      },
+      "similarItems": {
+        "description": "Find items similar to the currently open item.",
+        "commands": [
+          "show similar items",
+          "show me similar items",
+          "similar items",
+          "find similar items",
+          "show related items",
+          "show me related items",
+          "related items",
+          "more like this"
+        ]
       }
     }
   },
@@ -186,7 +199,8 @@
           "open *selection down from the *side",
           "open the *selection down from the *side",
           "open the *selection down the *side",
-          "open *selection down the *side"
+          "open *selection down the *side",
+          "open the *selection on the *side"
         ]
       },
       "goToPage": {
@@ -206,21 +220,6 @@
         "tell me about *object",
         "what are *object",
         "what's *object"
-      ]
-    }
-  },
-  "disambiguatedDirectCommands": {
-    "similarItems": {
-      "description": "Find items similar to the currently open item.",
-      "commands": [
-        "show similar items",
-        "show me similar items",
-        "similar items",
-        "find similar items",
-        "show related items",
-        "show me related items",
-        "related items",
-        "more like this"
       ]
     }
   }
