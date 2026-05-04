@@ -1,3 +1,4 @@
+// On page load, fetch a featured record and populate the homepage banner
 window.addEventListener("load", async () => {
     const banner = document.querySelector(".banner");
     const bannerLink = banner?.closest("a");
@@ -9,6 +10,7 @@ window.addEventListener("load", async () => {
 
         const wallaceData = await getData(searchURL, wallaceQuery);
 
+        // Filter to records that have a usable image
         const wallaceRecords = getImageRecords(wallaceData?.records ?? []);
 
         updateBanner({
@@ -23,10 +25,12 @@ window.addEventListener("load", async () => {
     }
 });
 
+// Filters out records that have no displayable image
 function getImageRecords(records) {
     return records.filter((record) => getBestImageUrl(record));
 }
 
+// Returns the best available image URL for a record, preferring IIIF
 function getBestImageUrl(record) {
     const iiifBase = record?._images?._iiif_image_base_url;
     const thumbnail = record?._images?._primary_thumbnail;
@@ -38,6 +42,7 @@ function getBestImageUrl(record) {
     return thumbnail || "";
 }
 
+// Returns the best display title for a record
 function getDisplayTitle(record) {
     if (record?._primaryTitle?.trim()) {
         return record._primaryTitle.trim();
@@ -50,6 +55,7 @@ function getDisplayTitle(record) {
     return "Untitled object";
 }
 
+// Builds a short maker/place/date summary string for the banner subtitle
 function getDisplaySummary(record) {
     const maker = record?._primaryMaker?.name?.trim();
     const place = record?._primaryPlace?.trim();
@@ -74,6 +80,7 @@ function getDisplaySummary(record) {
     return "V&A collection highlight";
 }
 
+// Returns the item page URL for a record
 function getCollectionsUrl(record) {
     if (!record?.systemNumber) {
         return "pages/item.html";
@@ -82,6 +89,7 @@ function getCollectionsUrl(record) {
     return `pages/item.html?id=${encodeURIComponent(record.systemNumber)}`;
 }
 
+// Applies a record's image and metadata to the homepage banner element
 function updateBanner({ banner, bannerLink, bannerTitle, bannerDescription, record }) {
     if (!banner || !record) {
         return;

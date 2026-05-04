@@ -1,3 +1,4 @@
+// Prevent double-initialisation if the script loads more than once
 (function () {
   if (window.voiceCommandsInitialized) return;
   window.voiceCommandsInitialized = true;
@@ -5,16 +6,16 @@
   const annyang = window.annyang;
   if (!annyang) return;
 
-  /* -----------------------------------------------
-     Constants
-     ----------------------------------------------- */
-
+ 
+  // Words matched during clarification prompts
   const ORDINAL_WORDS = ["first", "second", "third"];
+  // Match words to the number they represent
   const CARDINAL_TO_INDEX = {
     one: 0, won: 0, two: 1, to: 1, too: 1, three: 2,
     four: 3, for: 3, five: 4, six: 5, seven: 6,
     eight: 7, ate: 7, nine: 8
   };
+  // Milliseconds before an unanswered clarification prompt times out
   const CLARIFICATION_TIMEOUT_MS = 22000;
 
   // Each command's JSON config path.
@@ -22,6 +23,7 @@
     home:                    ["directCommands", "navigation", "home"],
     help:                    ["directCommands", "navigation", "help"],
     listCategories:          ["directCommands", "navigation", "listCategories"],
+    openCollections:         ["directCommands", "navigation", "openCollections"],
     cancel:                  ["directCommands", "pageCommands", "cancel"],
     carouselLeft:            ["directCommands", "pageCommands", "carouselLeft"],
     carouselRight:           ["directCommands", "pageCommands", "carouselRight"],
@@ -39,22 +41,16 @@
     similarItems:            ["directCommands", "pageCommands", "similarItems"]
   };
 
-  /* -----------------------------------------------
-     State
-     ----------------------------------------------- */
-
+  
   let commandPhrases = {};
   let clarificationState = null;
   let clarificationToken = 0;
   let overlayElement = null;
   let escapeCommandPhrases = [];
 
-  /* -----------------------------------------------
-     Speech Utilities
-     ----------------------------------------------- */
-
   let isSpeaking = false;
 
+  // Toggles the mic SVG between speaking and listening states
   function setSpeaking(active) {
     isSpeaking = active;
     const svg = document.querySelector(".mic svg");
@@ -67,6 +63,7 @@
     }
   }
 
+  // Speaks text via the Web Speech API and calls onComplete when finished
   function speak(text, onComplete) {
     if (!text) { onComplete?.(); return; }
     if (window.speechSynthesis && typeof SpeechSynthesisUtterance === "function") {
@@ -91,12 +88,14 @@
     onComplete?.();
   }
 
+  // Cancels ongoing speech and resumes normal command listening
   function interruptSpeech(fn) {
     window.speechSynthesis.cancel();
     endSpeaking();
     fn();
   }
 
+  // Restores base commands after speech finishes
   function endSpeaking() {
     if (escapeCommandPhrases.length) {
       annyang.removeCommands(escapeCommandPhrases);
@@ -106,28 +105,28 @@
     registerBaseCommands();
     annyang.start();
   }
+  // Trims and collapses whitespace/punctuation from a string
   function sanitize(input) {
     return typeof input === "string"
       ? input.trim().replace(/^[\s,.;:!?-]+|[\s,.;:!?-]+$/g, "").replace(/\s+/g, " ")
       : "";
   }
 
+  // Lowercases, removes non-alphanumeric characters, and collapses spaces
   function normalize(input) {
     return typeof input === "string"
       ? input.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim()
       : "";
   }
 
-  /* -----------------------------------------------
-     Configuration Loading
-     ----------------------------------------------- */
-
+  // Fetches and parses a JSON config file
   async function loadConfig(url) {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Failed to load ${url}: ${res.statusText}`);
     return await res.json();
   }
 
+  // Walks the config object along the given key path and returns its command phrases
   function resolvePhrases(config, path) {
     let node = config;
     for (const key of path) {
@@ -139,10 +138,8 @@
     return [];
   }
 
-  /* -----------------------------------------------
-     Command Registration
-     ----------------------------------------------- */
-
+  
+  // Creates an annyang command map from a phrase list, longest phrases first
   function buildCommandMap(phrases, handler) {
     const sorted = [...phrases].sort((a, b) =>
       b.replace(/\*/g, "").length - a.replace(/\*/g, "").length
@@ -152,10 +149,12 @@
     return map;
   }
 
+  // Returns true if a phrase contains a wildcard (*)
   function isWildcardPhrase(phrase) {
     return typeof phrase === "string" && phrase.includes("*");
   }
 
+  // Registers all base command phrases with annyang, exact phrases before wildcards
   function registerBaseCommands() {
     const entries = Object.entries(commandPhrases);
 
@@ -175,22 +174,22 @@
     }
   }
 
+  // Removes all base command phrases from annyang
   function unregisterBaseCommands() {
     for (const phrases of Object.values(commandPhrases)) {
       if (phrases.length) annyang.removeCommands(phrases);
     }
   }
 
-  /* -----------------------------------------------
-     Page Interaction
-     ----------------------------------------------- */
-
+ 
+  // Fires a bubbling click event on an element
   function clickElement(el) {
     if (!el) return false;
     el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     return true;
   }
 
+  // Announces direction and triggers the correct scroll handler for the current page
   function scrollPage(direction) {
     speak(direction < 0 ? "Scrolling up." : "Scrolling down.");
     if (document.body.classList.contains("scroll-page") && window.scrollPageController?.scroll) {
@@ -201,6 +200,7 @@
     window.scrollBy({ top: direction * step, behavior: "smooth" });
   }
 
+  // Moves the carousel or circle carousel one step in the given direction
   function moveCarousel(direction) {
     // On item-page, use window.moveCarousel if available
     if (document.body.classList.contains("item-page") && typeof window.moveCarousel === "function") {
@@ -223,10 +223,8 @@
     speak("There is no carousel movement available right now.");
   }
 
-  /* -----------------------------------------------
-     Read Current Item
-     ----------------------------------------------- */
-
+  
+  // Reads the visible item title and description aloud
   function readCurrentItem() {
     const panel = document.querySelector(".item-panel");
     const title = panel?.querySelector("h2")?.textContent?.trim();
@@ -240,16 +238,15 @@
     speak("I could not find an item to read on this page.");
   }
 
-  /* -----------------------------------------------
-     Item Image Overlay
-     ----------------------------------------------- */
-
+  
+  // Extracts the last url() value from a CSS background-image string
   function extractBgUrl(value) {
     if (typeof value !== "string") return "";
     const matches = [...value.matchAll(/url\((['"]?)(.*?)\1\)/g)];
     return matches.length ? (matches[matches.length - 1][2] || "") : "";
   }
 
+  // Returns the image URL of the currently highlighted carousel slot
   function getOverlayImageUrl() {
     const slots = Array.from(
       document.querySelectorAll(".item-page .circle-carousel-track .circle-item")
@@ -277,6 +274,7 @@
     return "";
   }
 
+  // Removes the open image overlay from the DOM
   function closeItemOverlay(announce = true) {
     if (!overlayElement) {
       if (announce) speak("There is no open image overlay.");
@@ -287,6 +285,7 @@
     if (announce) speak("Closed image overlay.");
   }
 
+  // Creates and shows a fullscreen overlay containing the current carousel image
   function openItemOverlay() {
     const imageUrl = getOverlayImageUrl();
     if (!imageUrl) { speak("I could not find the current item image to open."); return; }
@@ -322,6 +321,7 @@
     speak(`Opened image for ${title}`);
   }
 
+  // Refreshes the overlay image when the carousel has rotated
   function updateOverlayIfOpen() {
     if (!overlayElement) return;
     const url = getOverlayImageUrl();
@@ -333,10 +333,8 @@
     }
   }
 
-  /* -----------------------------------------------
-     Clarification System
-     ----------------------------------------------- */
-
+ 
+  // Resolves a spoken choice word/number to a zero-based option index
   function parseChoiceIndex(raw, options) {
     const text = normalize(raw);
     if (!text) return -1;
@@ -361,6 +359,7 @@
     return options.findIndex(o => o.normalizedTitle && text.includes(o.normalizedTitle));
   }
 
+  // Clears the active clarification state and restores base commands
   function endClarification() {
     if (clarificationState) {
       if (clarificationState.timeoutId) clearTimeout(clarificationState.timeoutId);
@@ -371,6 +370,7 @@
     registerBaseCommands();
   }
 
+  // Prompts the user to pick from a list of choices and waits for a response
   function startClarification({ choices, onSelect, prompt, cleanup }) {
     unregisterBaseCommands();
     const token = ++clarificationToken;
@@ -413,12 +413,10 @@
     });
   }
 
-  /* -----------------------------------------------
-     On-Page Item Navigation
-     ----------------------------------------------- */
-
+  
+  // Builds a list of navigable card links from the current DOM (items and category cards)
   function buildItemLinkCandidates() {
-    const pattern = /\/item\.html(?:\?|$)/i;
+    const pattern = /\/item\.html(?:\?|$)|\/scroll\.html\?/i;
     return Array.from(document.querySelectorAll("a[href]"))
       .map(anchor => {
         const href = anchor.getAttribute("href") || "";
@@ -431,6 +429,7 @@
       .filter(Boolean);
   }
 
+  // Adds numbered badge overlays to each candidate card and returns a cleanup function
   function renderChoiceOverlays(candidates) {
     const nodes = [];
     candidates.forEach((c, i) => {
@@ -450,6 +449,7 @@
     };
   }
 
+  // Converts a spoken ordinal word or digit to a zero-based index
   function parseOrdinalIndex(text) {
     if (!text) return -1;
 
@@ -483,6 +483,7 @@
     return -1;
   }
 
+  // Parses a spoken scroll position phrase into side/direction/index
   function parseScrollPositionSelection(raw) {
     const text = normalize(raw);
     if (!text) return null;
@@ -501,6 +502,7 @@
     return { side, direction, ordinalIndex };
   }
 
+  // Returns focused scroll card anchors grouped by left/right column
   function getScrollVisibleCandidatesBySide() {
     const panels = Array.from(document.querySelectorAll(".scroll-page .scroll-panel"));
     const bySide = { left: [], right: [] };
@@ -525,6 +527,7 @@
     return bySide;
   }
 
+  // Navigates to a scroll card identified by its side and position
   function openItemByScrollPosition(rawSelection) {
     if (!document.body.classList.contains("scroll-page")) return false;
 
@@ -554,6 +557,7 @@
     return true;
   }
 
+  // Entry point for voice command that opens an item by its scroll column position
   function openItemByPosition(rawSelection, rawSide) {
     if (!document.body.classList.contains("scroll-page")) {
       speak("This command works on the scroll page.");
@@ -573,6 +577,7 @@
     }
   }
 
+  // Navigates to an item link on the current page, disambiguating if needed
   function openItemFromPage(rawName) {
     const name = sanitize(rawName);
     const normalizedName = normalize(name);
@@ -609,10 +614,8 @@
     }
   }
 
-  /* -----------------------------------------------
-     API Object Explanation with Disambiguation
-     ----------------------------------------------- */
-
+  
+  // Returns the best title string for a V&A API record
   function getRecordTitle(r) {
     return r?._primaryTitle?.trim()
       || r?.titles?.[0]?.title?.trim()
@@ -620,6 +623,7 @@
       || "Untitled object";
   }
 
+  // Returns a short maker/date subtitle string for a record
   function getRecordSubtitle(r) {
     const maker = r?._primaryMaker?.name?.trim();
     const date = r?._primaryDate?.trim();
@@ -627,6 +631,7 @@
     return maker || date || "";
   }
 
+  // Builds a clarification choice object from an API record
   function buildClarificationChoice(record, index) {
     const title = getRecordTitle(record);
     const subtitle = getRecordSubtitle(record);
@@ -639,6 +644,7 @@
     };
   }
 
+  // Navigates to an item page from a clarification choice
   function navigateToItem(choice) {
     if (!choice?.systemNumber) {
       speak("That option is missing an item identifier. Please try again.");
@@ -651,6 +657,7 @@
     );
   }
 
+  // Fetches API results for a name and navigates directly or prompts for a choice
   async function explainWithDisambiguation(rawName) {
     const name = sanitize(rawName);
     if (!name) { speak("Please tell me which object you want to learn about."); return; }
@@ -670,14 +677,12 @@
     startClarification({
       choices,
       onSelect: navigateToItem,
-      prompt: `I found ${choices.length} items with that name. Say first, second, or third.`
+      prompt: `I found ${choices.length} items with that name. Say one, two, or three.`
     });
   }
 
-  /* -----------------------------------------------
-     Creator Collection
-     ----------------------------------------------- */
 
+  // Navigates to the creator's collection page
   function openCreatorCollection(rawName) {
     const name = sanitize(rawName);
     if (!name) { speak("Please say the creator whose collection you want to open."); return; }
@@ -685,11 +690,13 @@
     window.location.replace("/pages/collection.html?creator=" + encodeURIComponent(name));
   }
 
+  // Navigates to the general categories scroll page
   function openGeneralCategories() {
     speak("Showing categories.");
     window.location.replace("/pages/scroll.html?mode=categories");
   }
 
+  // Scores how well a record title matches the search target
   function scoreTitleMatch(normalizedTitle, normalizedTarget, targetTokens) {
     if (!normalizedTitle || !normalizedTarget) return 0;
     if (normalizedTitle === normalizedTarget) return 1000;
@@ -702,6 +709,7 @@
     return overlap * 100;
   }
 
+  // Fetches records and opens the best title match directly
   async function goToPageByBestMatch(rawName) {
     const name = sanitize(rawName);
     if (!name) {
@@ -744,6 +752,7 @@
     }
   }
 
+  // Builds a search query from a record's key attributes to find similar items
   function buildSimilarQueryFromRecord(record) {
     const objectType = sanitize(record?.objectType || "");
     const maker = sanitize(record?._primaryMaker?.name || "");
@@ -759,6 +768,7 @@
     return title;
   }
 
+  // Navigates to a scroll search for items similar to the current item page
   async function openSimilarItems() {
     const onItemPage = document.body.classList.contains("item-page");
     if (!onItemPage) {
@@ -799,10 +809,8 @@
     }
   }
 
-  /* -----------------------------------------------
-     Cancel
-     ----------------------------------------------- */
-
+  
+  // Cancels speech, overlay, or clarification depending on current state
   function cancelCurrentAction() {
     window.speechSynthesis?.cancel();
     if (overlayElement) closeItemOverlay(false);
@@ -810,10 +818,9 @@
     speak("Stopped.");
   }
 
-  /* -----------------------------------------------
-     No-Match Fallback
-     ----------------------------------------------- */
+  
 
+  // Tries to extract an object name from a free-form speech phrase
   function extractObjectFromSpeech(phrase) {
     const text = normalize(phrase);
     for (const pattern of [
@@ -828,6 +835,7 @@
     return "";
   }
 
+  // Returns true if the query is a recognised alias for the similar-items command
   function isSimilarItemsAlias(text) {
     const normalized = normalize(text);
     return [
@@ -839,6 +847,7 @@
     ].includes(normalized);
   }
 
+  // Handles a search command, delegating to similar-items if applicable
   function handleSearchCommand(rawQuery) {
     const query = sanitize(rawQuery || "");
     if (isSimilarItemsAlias(query)) {
@@ -856,7 +865,8 @@
   const HANDLERS = {
     home:                    () => { speak("Going to home page."); window.location.replace("/index.html"); },
     help:                    () => { speak("Opening help."); window.location.replace("/pages/help.html"); },
-    listCategories:          () => openGeneralCategories(),
+    listCategories:          () => {speak("Going to categories page."); openGeneralCategories()},
+    openCollections:         () => { speak("Opening collections."); window.location.replace("/pages/collection.html"); },
     cancel:                  () => cancelCurrentAction(),
     carouselLeft:            () => moveCarousel(-1),
     carouselRight:           () => moveCarousel(1),
@@ -874,10 +884,9 @@
     similarItems:            () => openSimilarItems()
   };
 
-  /* -----------------------------------------------
-     Initialization
-     ----------------------------------------------- */
+  
 
+  // Loads commands.json, registers phrases with annyang, and starts listening
   async function init() {
     const config = await loadConfig("/commands.json");
 
@@ -909,8 +918,7 @@
     patchRecognitionTranscripts();
   }
 
-  // Strip trailing punctuation (e.g. "." added by speech recognition) from
-  // transcripts before annyang matches them against commands.
+  // Patches the speech recogniser to strip trailing punctuation from transcripts
   function patchRecognitionTranscripts() {
     const recognizer = annyang.getSpeechRecognizer?.();
     if (!recognizer) return;

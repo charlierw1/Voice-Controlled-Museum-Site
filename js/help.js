@@ -1,3 +1,4 @@
+// On page load, fetch commands.json and render each command as a help section
 window.addEventListener("load", async () => {
     const host = document.querySelector("#help-commands");
     if (!host) {
@@ -19,6 +20,7 @@ window.addEventListener("load", async () => {
         }
 
         const total = commandEntries.length;
+        // Build sections in reverse order so z-index stacks correctly
         const sections = commandEntries.map((entry, i) => buildCommandSection(entry, total - i));
         host.replaceChildren(...sections);
     } catch (error) {
@@ -27,6 +29,7 @@ window.addEventListener("load", async () => {
     }
 });
 
+// Walks all command buckets in config and returns a flat array of entries
 function collectCommandEntries(config) {
     const buckets = [
         config?.directCommands,
@@ -43,6 +46,7 @@ function collectCommandEntries(config) {
     return entries;
 }
 
+// Recursively descends the config tree, pushing leaf command nodes onto entries
 function collectEntriesRecursive(node, path, entries) {
     if (!node || typeof node !== "object") {
         return;
@@ -64,6 +68,7 @@ function collectEntriesRecursive(node, path, entries) {
     });
 }
 
+// Converts a camelCase command key into a human-readable title
 function formatCommandName(name) {
     return String(name || "")
         .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
@@ -71,6 +76,7 @@ function formatCommandName(name) {
         .replace(/^\w/, (char) => char.toUpperCase());
 }
 
+// Builds a DOM section element for a single command entry
 function buildCommandSection(entry, zIndex) {
     const section = document.createElement("section");
     if (zIndex !== undefined) section.style.zIndex = zIndex;
@@ -98,6 +104,7 @@ function buildCommandSection(entry, zIndex) {
     return section;
 }
 
+// Builds a simple message section used for error or empty states
 function buildMessageSection(message) {
     const section = document.createElement("section");
     const text = document.createElement("p");

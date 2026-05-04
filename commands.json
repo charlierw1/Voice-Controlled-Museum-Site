@@ -24,7 +24,13 @@
         "description": "Open the help page containing available voice commands.",
         "commands": [
           "display helpful commands",
-          "help"
+          "help",
+          "help page",
+          "go to help page",
+          "show me help page",
+          "show me commands",
+          "open commands help",
+          "commands help"
         ]
       },
       "listCategories": {
@@ -32,14 +38,24 @@
         "commands": [
           "categories",
           "show categories",
+          "show me categories",
           "list categories",
           "what categories are there"
+        ]
+      },
+      "openCollections": {
+        "description": "Navigate to the base collections page.",
+        "commands": [
+          "collections",
+          "open collections",
+          "go to collections",
+          "show me collections"
         ]
       }
     },
     "pageCommands": {
       "cancel": {
-        "description": "Cancel the current voice interaction or close transient UI actions.",
+        "description": "Cancel the current voice interaction.",
         "commands": [
           "cancel",
           "stop",
@@ -55,7 +71,9 @@
           "move carousel left",
           "go left",
           "previous item",
-          "left"
+          "previous",
+          "left",
+          "arrow left"
         ]
       },
       "carouselRight": {
@@ -63,11 +81,16 @@
         "commands": [
           "move right",
           "carousel right",
+          "carousel next",
           "move carousel right",
           "go right",
           "next item",
+          "next image",
+          "next again",
+          "right again",
           "right",
-          "next"
+          "next",
+          "arrow right"
         ]
       },
       "scrollUp": {
@@ -76,7 +99,8 @@
           "scroll up",
           "move up",
           "page up",
-          "go up"
+          "go up",
+          "up"
         ]
       },
       "scrollDown": {
@@ -85,7 +109,8 @@
           "scroll down",
           "move down",
           "page down",
-          "go down"
+          "go down",
+          "up"
         ]
       },
       "readCurrentItem": {
@@ -96,10 +121,11 @@
           "read this page",
           "read this",
           "read item",
+          "read",
           "tell me this item",
           "describe this item",
           "describe this",
-          "read this page"
+          "show me details"
         ]
       },
       "openCurrentItemOverlay": {
@@ -109,19 +135,19 @@
           "enlarge image",
           "enlarge this image",
           "enlarge current image",
-          "enlarge current image",
+          "enlarge item",
+          "enlarge current item",
           "make image bigger",
           "make current image bigger",
           "make the image bigger",
           "make the current image bigger",
+          "show me image",
+          "show image",
           "enhance",
           "enhance image",
           "enhance this image",
           "enhance current image",
-          "enchance",
-          "enchance image",
-          "enchance this image",
-          "enchance current image"
+          "enchance"
         ]
       },
       "closeItemOverlay": {
@@ -132,7 +158,10 @@
           "hide image",
           "exit image",
           "close item image",
-          "close"
+          "close item",
+          "close",
+          "hide",
+          "exit"
         ]
       },
       "similarItems": {
@@ -162,7 +191,10 @@
           "show me information about *object",
           "museum *object",
           "see *object",
-          "see item *object"
+          "see item *object",
+          "find *object",
+          "search *object",
+          "look at *object"
         ]
       },
       "creatorCollectionSearch": {
@@ -170,10 +202,17 @@
         "commands": [
           "show me items created by *creator",
           "show me works created by *creator",
+          "show me works by *creator",
           "show me the collection by *creator",
+          "show me the collection of *creator",
           "open the collection by *creator",
           "take me to the collection by *creator",
-          "show me *creator collection"
+          "show me *creator collection",
+          "show me the *creator collection",
+          "open *creator collection",
+          "open the *creator collection",
+          "open collection *creator",
+          "open collection by *creator"
         ]
       },
       "openItemOnPage": {
@@ -186,7 +225,6 @@
           "show *object item",
           "open, *object",
           "open item *object",
-          "take me to *object item",
           "go to *object item",
           "show *object item"
         ]
@@ -207,7 +245,9 @@
         "description": "Find and navigate directly to the best matching object item page.",
         "commands": [
           "take me to the *object page",
-          "take me to *object"
+          "take me to *object",
+          "take me to *object item",
+          "take me to the *object item"
         ]
       }
     }
@@ -219,7 +259,8 @@
         "tell me more about *object",
         "tell me about *object",
         "what are *object",
-        "what's *object"
+        "what's *object",
+        "what is *object"
       ]
     }
   }

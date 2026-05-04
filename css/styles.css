@@ -460,10 +460,30 @@ header {
     top: auto;
     width: min(30rem, 94vw);
     height: min(30rem, 94vw);
-    margin: -0.95rem auto 0;
+    margin: -12rem auto 3em;
     overflow: hidden;
     border-top: none;
     border-radius: 0 0 100vmax 100vmax;
+  }
+
+  .item-page .circle-carousel-track {
+    --orbit-radius: clamp(9.6rem, 42vw, 12rem);
+    transform: rotate(calc(var(--ring-rotation) - 90deg));
+  }
+
+  .item-page .circle-item,
+  .item-page .circle-item-main {
+    width: clamp(6.5rem, 23vw, 8.5rem);
+  }
+
+  .item-page .circle-item-image,
+  .item-page .circle-item-main .circle-item-image {
+    height: clamp(4.2rem, 15vw, 5.8rem);
+    transform: rotate(calc(var(--counter-rotation) + 90deg));
+  }
+
+  .item-page .circle-item figcaption {
+    transform: rotate(calc(var(--counter-rotation) + 90deg));
   }
 
   .item-carousel-arrow-right {
@@ -479,7 +499,8 @@ header {
   .item-page .circle-carousel {
     width: min(23rem, 96vw);
     height: min(23rem, 96vw);
-    margin-top: -1.7rem;
+    margin-top: -10rem;
+    margin-bottom: 5em;
   }
 
   .item-page .circle-carousel-track {

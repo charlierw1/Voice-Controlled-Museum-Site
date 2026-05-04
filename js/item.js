@@ -1,3 +1,4 @@
+// On page load, fetch the item by ID and initialise the page
 window.addEventListener("load", async () => {
     const params = new URLSearchParams(window.location.search);
     const itemId = params.get("id");
@@ -30,6 +31,7 @@ window.addEventListener("load", async () => {
     }
 });
 
+// Speaks the item title and description aloud using the Web Speech API
 function speakItemExplanation(record) {
     if (!window.speechSynthesis || typeof window.SpeechSynthesisUtterance !== "function") {
         return;
@@ -45,6 +47,7 @@ function speakItemExplanation(record) {
     window.speechSynthesis.speak(utterance);
 }
 
+// Updates the item panel heading and paragraph with record text
 function updateItemText(record) {
     const panel = document.querySelector(".item-panel");
     const titleElement = panel?.querySelector("h2");
@@ -59,6 +62,7 @@ function updateItemText(record) {
     }
 }
 
+// Sets up the circle carousel with image slots, state, and initial render
 function initializeItemCarousel(record, metaImages) {
     const carousel = document.querySelector(".circle-carousel");
     const track = document.querySelector(".circle-carousel-track");
@@ -119,6 +123,7 @@ function initializeItemCarousel(record, metaImages) {
     // Arrow button wiring removed
 }
 
+// Attaches a click listener to an arrow button
 function wireItemArrow(button, onActivate) {
     if (!button) {
         return;
@@ -127,6 +132,7 @@ function wireItemArrow(button, onActivate) {
     button.addEventListener("click", onActivate);
 }
 
+// Rotates the carousel one step in the given direction with animation
 function rotateItemCarousel(state, direction) {
     if (state.isAnimating || !state.imageUrls.length || !state.track) {
         return;
@@ -151,6 +157,7 @@ function rotateItemCarousel(state, direction) {
     }, state.animationMs + 20);
 }
 
+// Scales up the bottom slot and resets all others to normal size
 function updateSlotScales(state, bottomOrderIndex) {
     const largeScale = 1.26;
 
@@ -163,6 +170,7 @@ function updateSlotScales(state, bottomOrderIndex) {
     });
 }
 
+// Applies the current image URLs to each visible carousel slot
 function renderCarouselState(state) {
     const { imageSlots, imageUrls, mainTitle, itemDescription, offsets, centerIndex } = state;
 
@@ -192,6 +200,7 @@ function renderCarouselState(state) {
     });
 }
 
+// Updates the CSS rotation custom properties for the ring and counter-rotation
 function setRotation(state, degrees) {
     if (!state.carousel) {
         return;
@@ -201,6 +210,7 @@ function setRotation(state, degrees) {
     state.carousel.style.setProperty("--counter-rotation", `${-degrees}deg`);
 }
 
+// Preloads images around the current centre index to reduce flicker
 function preloadAround(state) {
     const preloadIndexes = [
         state.centerIndex - 2,
@@ -223,6 +233,7 @@ function preloadAround(state) {
     });
 }
 
+// Wraps an index to stay within [0, length)
 function toWrappedIndex(index, length) {
     if (!length) {
         return 0;
@@ -231,6 +242,7 @@ function toWrappedIndex(index, length) {
     return ((index % length) + length) % length;
 }
 
+// Collects all IIIF image URLs from a record's image references
 function getItemImageUrls(record, metaImages) {
     const urls = [];
     const imageRefs = Array.isArray(record?.images) ? record.images : [];
@@ -254,6 +266,7 @@ function getItemImageUrls(record, metaImages) {
     return urls;
 }
 
+// Returns slot indices sorted by their CSS orbit angle (ascending)
 function getSlotIndexesByAscendingAngle(imageSlots) {
     return imageSlots
         .map((slot, index) => ({ index, angle: getSlotAngle(slot) }))
@@ -261,12 +274,14 @@ function getSlotIndexesByAscendingAngle(imageSlots) {
         .map((entry) => entry.index);
 }
 
+// Returns the order index of whichever slot is initially at the bottom
 function findBottomOrderIndex(imageSlots, orderedSlotIndexes) {
     const bottomIndex = imageSlots.findIndex((slot) => slot.classList.contains("circle-item-main"));
     const orderIndex = orderedSlotIndexes.indexOf(bottomIndex);
     return orderIndex >= 0 ? orderIndex : 0;
 }
 
+// Returns the angle in degrees assigned to a slot by its class name
 function getSlotAngle(slot) {
     if (slot.classList.contains("orbit-right")) {
         return 36;
@@ -291,6 +306,7 @@ function getSlotAngle(slot) {
     return 0;
 }
 
+// Returns the best display title for a record
 function getItemTitle(record) {
     const firstTitle = Array.isArray(record?.titles) ? record.titles[0]?.title : "";
     if (typeof firstTitle === "string" && firstTitle.trim()) {
@@ -304,6 +320,7 @@ function getItemTitle(record) {
     return "Untitled object";
 }
 
+// Returns the best description text for a record
 function getItemDescription(record) {
     if (record?.summaryDescription?.trim()) {
         return record.summaryDescription.trim();
@@ -320,6 +337,7 @@ function getItemDescription(record) {
     return "No description available for this object.";
 }
 
+// Renders an error state in the item panel when the item cannot be loaded
 function renderMissingItemState(message) {
     const panel = document.querySelector(".item-panel");
     const titleElement = panel?.querySelector("h2");

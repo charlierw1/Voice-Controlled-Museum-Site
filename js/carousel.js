@@ -1,15 +1,20 @@
+// Number of visible cards at desktop and mobile breakpoints
 const CAROUSEL_DESKTOP_VISIBLE_COUNT = 5;
 const CAROUSEL_MOBILE_VISIBLE_COUNT = 6;
 const CAROUSEL_MOBILE_BREAKPOINT = 760;
+// Records to fetch per API page
 const CAROUSEL_PAGE_SIZE = 24;
+// Slide animation duration in milliseconds
 const CAROUSEL_ANIMATION_MS = 360;
 
+// On page load, kick off carousel initialisation
 window.addEventListener("load", () => {
     initializeCarousel().catch((error) => {
         console.error("Carousel initialization failed", error);
     });
 });
 
+// Queries the DOM, sets up state, wires arrows, and loads the first page
 async function initializeCarousel() {
     const carousel = document.querySelector(".carousel");
     if (!carousel) {
@@ -54,16 +59,19 @@ async function initializeCarousel() {
     wireCarouselResize(state);
 }
 
+// Returns the correct visible card count for the current viewport width
 function getCarouselVisibleCount() {
     return window.matchMedia(`(max-width: ${CAROUSEL_MOBILE_BREAKPOINT}px)`).matches
         ? CAROUSEL_MOBILE_VISIBLE_COUNT
         : CAROUSEL_DESKTOP_VISIBLE_COUNT;
 }
 
+// Returns the index of the centre card slot for a given visible count
 function getCarouselCenterIndex(visibleCount) {
     return Math.floor((visibleCount - 1) / 2);
 }
 
+// Listens for window resize and refreshes the layout after a brief debounce
 function wireCarouselResize(state) {
     let resizeTimer = null;
 
@@ -80,6 +88,7 @@ function wireCarouselResize(state) {
     });
 }
 
+// Updates slot count and re-renders if the breakpoint has changed
 async function refreshCarouselLayout(state) {
     if (state.isBusy) {
         return;
@@ -102,6 +111,7 @@ async function refreshCarouselLayout(state) {
     preloadAhead(state);
 }
 
+// Adds or removes card slot elements to match the required visible count
 function syncCardSlots(state, requiredCount) {
     const links = Array.from(state.carousel.children).filter((element) => element.tagName === "A");
 
@@ -157,6 +167,7 @@ function syncCardSlots(state, requiredCount) {
     });
 }
 
+// Attaches click and keyboard listeners to an arrow element
 function wireArrow(state, arrow, label, onActivate) {
     arrow.setAttribute("tabindex", "0");
     arrow.style.cursor = "pointer";
@@ -179,6 +190,7 @@ function wireArrow(state, arrow, label, onActivate) {
     updateArrowDisabledVisual(state, arrow, false);
 }
 
+// Shifts the carousel window one step left or right with animation
 async function shiftCarousel(state, direction) {
     if (state.isBusy) {
         return;
@@ -209,18 +221,21 @@ async function shiftCarousel(state, direction) {
     }
 }
 
+// Returns a promise that resolves after the given number of milliseconds
 function wait(ms) {
     return new Promise((resolve) => {
         window.setTimeout(resolve, ms);
     });
 }
 
+// Fetches pages from the API until records.length meets the minimum required
 async function ensureWindowData(state, minRecordsRequired) {
     while (state.records.length < minRecordsRequired && state.hasMore) {
         await appendNextPage(state);
     }
 }
 
+// Fetches and deduplicates one page of records from the API
 async function appendNextPage(state) {
     if (state.isLoadingPage || !state.hasMore) {
         return;
@@ -262,6 +277,7 @@ async function appendNextPage(state) {
     }
 }
 
+// Applies the current records window to all visible card slots
 function renderWindow(state) {
     for (let slot = 0; slot < state.visibleCount; slot += 1) {
         const recordIndex = state.startIndex + slot;
@@ -276,6 +292,7 @@ function renderWindow(state) {
     updateArrowDisabledVisual(state, state.rightArrow, cannotMoveRight);
 }
 
+// Sets background image, label, and href on a single card slot
 function applyRecordToCard(card, anchor, record, slot, centerIndex) {
     const label = card.querySelector("span");
 
@@ -309,6 +326,7 @@ function applyRecordToCard(card, anchor, record, slot, centerIndex) {
     }
 }
 
+// Preloads images just beyond the visible window and fetches more data if needed
 function preloadAhead(state) {
     const preloadIndexes = [
         state.startIndex + state.visibleCount,
@@ -338,6 +356,7 @@ function preloadAhead(state) {
     }
 }
 
+// Animates the slide transition then updates state to the target start index
 async function animateShift(state, targetStart) {
     const direction = targetStart > state.startIndex ? 1 : -1;
     const slotRects = state.cardBodies.map((card) => card.getBoundingClientRect());
@@ -385,6 +404,7 @@ async function animateShift(state, targetStart) {
     });
 }
 
+// Creates a fixed-position card clone used during the slide animation
 function createMotionClone(record, slot, rect, centerIndex) {
     const clone = document.createElement("div");
     clone.className = "image-card carousel-motion-clone";
@@ -403,6 +423,7 @@ function createMotionClone(record, slot, rect, centerIndex) {
     return clone;
 }
 
+// Returns a rect positioned one slot off-screen on the incoming side
 function createIncomingRect(targetRect, direction, slotGap) {
     return {
         left: targetRect.left + (direction > 0 ? slotGap : -slotGap),
@@ -412,6 +433,7 @@ function createIncomingRect(targetRect, direction, slotGap) {
     };
 }
 
+// Transitions a motion clone to its target position
 function moveCloneToRect(clone, sourceRect, targetRect) {
     requestAnimationFrame(() => {
         clone.style.left = `${targetRect.left}px`;
@@ -421,6 +443,7 @@ function moveCloneToRect(clone, sourceRect, targetRect) {
     });
 }
 
+// Fades and slides a clone off-screen when it leaves the visible window
 function moveCloneOffscreen(clone, direction, slotGap) {
     const currentLeft = Number.parseFloat(clone.style.left || "0");
 
@@ -430,12 +453,14 @@ function moveCloneOffscreen(clone, direction, slotGap) {
     });
 }
 
+// Toggles arrow opacity and pointer-events based on disabled state
 function updateArrowDisabledVisual(state, arrow, isDisabled) {
     arrow.style.opacity = isDisabled ? "0.35" : "1";
     arrow.style.pointerEvents = isDisabled ? "none" : "auto";
     arrow.setAttribute("data-disabled", String(isDisabled));
 }
 
+// Returns the best available image URL for a record
 function getBestImageUrl(record) {
     const iiifBase = record?._images?._iiif_image_base_url;
     const thumbnail = record?._images?._primary_thumbnail;
@@ -447,6 +472,7 @@ function getBestImageUrl(record) {
     return thumbnail || "";
 }
 
+// Returns the best display title for a record
 function getDisplayTitle(record) {
     if (record?._primaryTitle?.trim()) {
         return record._primaryTitle.trim();
@@ -459,6 +485,7 @@ function getDisplayTitle(record) {
     return "Untitled object";
 }
 
+// Returns the item page URL for a record
 function getCollectionsUrl(record) {
     if (!record?.systemNumber) {
         return "pages/item.html";
@@ -467,6 +494,7 @@ function getCollectionsUrl(record) {
     return `pages/item.html?id=${encodeURIComponent(record.systemNumber)}`;
 }
 
+// Returns a deduplication key for a record based on identifiers
 function getRecordDedupKey(record) {
     const systemNumber = record?.systemNumber?.trim();
     if (systemNumber) {

@@ -1,11 +1,18 @@
+// Number of card rows visible at desktop and mobile breakpoints
 const SCROLL_DESKTOP_VISIBLE_ROWS = 3;
 const SCROLL_MOBILE_VISIBLE_ROWS = 4;
+// Extra rows rendered above/below the visible area for smooth scrolling
 const SCROLL_BUFFER_ROWS = 1;
+// Number of records to request per API page
 const SCROLL_FETCH_SIZE = 24;
+// Scroll animation duration in milliseconds
 const SCROLL_ANIMATION_MS = 420;
+// Fraction of a card height shown as a peek above/below the viewport
 const SCROLL_PEEK_RATIO = 0.34;
+// Maximum category tiles to fetch preview images for
 const CATEGORY_PREVIEW_LIMIT = 8;
 
+// Returns the best image URL for a scroll card record
 function getScrollImageUrl(record) {
     if (record?._previewImageUrl) {
         return record._previewImageUrl;
@@ -18,6 +25,7 @@ function getScrollImageUrl(record) {
     return record?._images?._primary_thumbnail || "";
 }
 
+// Returns a readable title for a scroll card record
 function getScrollDisplayTitle(record) {
     if (record?._displayTitle?.trim()) {
         return record._displayTitle.trim();
@@ -31,14 +39,17 @@ function getScrollDisplayTitle(record) {
     return "Untitled object";
 }
 
+// Returns true when the viewport is at the mobile breakpoint
 function isMobileScrollView() {
     return window.matchMedia("(max-width: 760px)").matches;
 }
 
+// Returns the correct visible row count for the current viewport size
 function getScrollVisibleRows() {
     return isMobileScrollView() ? SCROLL_MOBILE_VISIBLE_ROWS : SCROLL_DESKTOP_VISIBLE_ROWS;
 }
 
+// Creates a blank anchor+card DOM element for a scroll slot
 function createScrollCardSlot() {
     const anchor = document.createElement("a");
     anchor.href = "#";
@@ -55,6 +66,7 @@ function createScrollCardSlot() {
     return anchor;
 }
 
+// Populates a slot element with data from a record (or marks it as a placeholder)
 function applyRecordToSlot(slot, record) {
     const card = slot.querySelector(".image-card");
     const label = card?.querySelector("span");
@@ -101,6 +113,7 @@ function applyRecordToSlot(slot, record) {
     slot.href = `item.html?id=${encodeURIComponent(record.systemNumber)}`;
 }
 
+// Applies focus/peripheral CSS classes to a slot based on its row position
 function applyScrollSlotState(slot, relativeRowIndex, visibleRows) {
     slot.classList.remove("scroll-card-peripheral", "scroll-card-peripheral-top", "scroll-card-peripheral-bottom", "scroll-card-focus");
 
@@ -117,10 +130,12 @@ function applyScrollSlotState(slot, relativeRowIndex, visibleRows) {
     slot.classList.add("scroll-card-focus");
 }
 
+// Main scroll page initialiser - sets up columns, canvas, and loads data
 window.addEventListener("load", () => {
     const scrollBox = document.querySelector(".scroll-page .scroll-box");
     const mic = scrollBox?.querySelector(".mic");
     const buttons = scrollBox ? Array.from(scrollBox.querySelectorAll(".scroll-test-button")) : [];
+    // Map each panel to its viewport and track elements
     const columns = scrollBox
         ? Array.from(scrollBox.querySelectorAll(".scroll-panel")).map((panel, index) => ({
             index,
@@ -133,6 +148,7 @@ window.addEventListener("load", () => {
         return;
     }
 
+    // Create the canvas overlay used to draw lines from the mic to cards
     const canvas = document.createElement("canvas");
     canvas.className = "scroll-lines-canvas";
     scrollBox.prepend(canvas);
@@ -142,12 +158,14 @@ window.addEventListener("load", () => {
         return;
     }
 
+    // Read URL params to determine search mode and query
     const params = new URLSearchParams(window.location.search);
     const query = params.get("q")?.trim() || "";
     const mode = params.get("mode")?.trim() || "search";
     const categoryId = params.get("id_category")?.trim() || "";
     const categoryLabel = params.get("label")?.trim() || "";
 
+    // Returns the placeholder text when there are no results
     function getInitialEmptyStateLabel() {
         if (mode === "categories") {
             return "No category results found";
@@ -158,6 +176,7 @@ window.addEventListener("load", () => {
         return query ? "No results found" : "No search query";
     }
 
+    // Shared mutable state for the scroll view
     const state = {
         emptyStateLabel: getInitialEmptyStateLabel(),
         isAnimating: false,
@@ -168,6 +187,7 @@ window.addEventListener("load", () => {
 
     let resizeObserver;
 
+    // Resizes the canvas to match the scroll box, accounting for device pixel ratio
     function resizeCanvas() {
         const boxRect = scrollBox.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
@@ -181,14 +201,17 @@ window.addEventListener("load", () => {
         context.scale(dpr, dpr);
     }
 
+    // Returns the total number of data rows across all records
     function getTotalRows() {
         return Math.ceil(state.records.length / columns.length);
     }
 
+    // Returns the highest valid topRowIndex
     function getMaxTopRowIndex() {
         return Math.max(0, getTotalRows() - state.visibleRows);
     }
 
+    // Updates visibleRows if the breakpoint has changed; returns true if changed
     function syncVisibleRows() {
         const nextVisibleRows = getScrollVisibleRows();
         if (nextVisibleRows === state.visibleRows) {
@@ -200,6 +223,7 @@ window.addEventListener("load", () => {
         return true;
     }
 
+    // Returns the record for a given row/column, or a placeholder object
     function getRecordForPosition(rowIndex, columnIndex) {
         if (rowIndex < 0) {
             return { _placeholderLabel: state.emptyStateLabel };
@@ -215,6 +239,7 @@ window.addEventListener("load", () => {
         };
     }
 
+    // Collects x/y target points on each visible card edge for line drawing
     function buildVisibleTargets() {
         const boxRect = scrollBox.getBoundingClientRect();
         const micRect = mic.getBoundingClientRect();
@@ -262,6 +287,7 @@ window.addEventListener("load", () => {
         return targets;
     }
 
+    // Distributes anchor points evenly along an arc segment
     function buildAnchorsOnArc(centerX, centerY, radius, startDeg, endDeg, count) {
         if (count <= 0) {
             return [];
@@ -283,6 +309,7 @@ window.addEventListener("load", () => {
         return anchors;
     }
 
+    // Draws lines from the mic to every visible card edge on the canvas
     function drawLines() {
         if (isMobileScrollView()) {
             context.clearRect(0, 0, canvas.width, canvas.height);
@@ -330,6 +357,7 @@ window.addEventListener("load", () => {
         });
     }
 
+    // Re-renders all visible rows into the column tracks
     function renderVisibleRows() {
         columns.forEach((column) => {
             const slots = [];
@@ -353,6 +381,7 @@ window.addEventListener("load", () => {
         updateButtonState();
     }
 
+    // Enables/disables scroll buttons based on current position and animation state
     function updateButtonState() {
         buttons.forEach((button) => {
             const direction = Number(button.dataset.direction || "0");
@@ -363,6 +392,7 @@ window.addEventListener("load", () => {
         });
     }
 
+    // Returns the pixel height of one row plus its gap
     function getRowStep() {
         const firstTrack = columns[0]?.track;
         const firstSlot = firstTrack?.firstElementChild;
@@ -374,6 +404,7 @@ window.addEventListener("load", () => {
         return firstSlot.getBoundingClientRect().height + gap;
     }
 
+    // Recalculates viewport heights and base translate offset from card dimensions
     function updateViewportHeights() {
         const firstTrack = columns[0]?.track;
         const firstSlot = firstTrack?.firstElementChild;
@@ -396,12 +427,14 @@ window.addEventListener("load", () => {
         });
     }
 
+    // Cubic ease-in-out curve for smooth scroll animation
     function easeInOutCubic(progress) {
         return progress < 0.5
             ? 4 * progress * progress * progress
             : 1 - (Math.pow(-2 * progress + 2, 3) / 2);
     }
 
+    // Runs the frame-by-frame track translation animation in the given direction
     function animateTracks(direction, stepPx) {
         const start = performance.now();
         const startOffset = direction > 0 ? state.baseOffset : state.baseOffset - stepPx;
@@ -431,6 +464,7 @@ window.addEventListener("load", () => {
         requestAnimationFrame(frame);
     }
 
+    // Initiates a one-row scroll in the given direction if not already animating
     function scrollRecords(direction) {
         if (state.isAnimating) {
             return false;
@@ -471,6 +505,7 @@ window.addEventListener("load", () => {
         return true;
     }
 
+    // Redraws lines repeatedly for a short duration to settle after initial render
     function animateInitialDraw(durationMs) {
         const start = performance.now();
 
@@ -484,6 +519,7 @@ window.addEventListener("load", () => {
         requestAnimationFrame(frame);
     }
 
+    // Normalises the API response into a flat array of category terms
     function extractCategoryTerms(data) {
         if (Array.isArray(data)) {
             return data;
@@ -497,6 +533,7 @@ window.addEventListener("load", () => {
         return [];
     }
 
+    // Converts raw category terms into card-shaped record objects
     function buildCategoryCardRecords(terms) {
         return terms
             .map((term, index) => {
@@ -533,6 +570,7 @@ window.addEventListener("load", () => {
             .filter(Boolean);
     }
 
+    // Fetches preview images for the first few category cards
     async function hydrateCategoryPreviewImages(records) {
         if (!Array.isArray(records) || !records.length) {
             return;
@@ -562,6 +600,7 @@ window.addEventListener("load", () => {
         }
     }
 
+    // Loads search results from the V&A API and renders them into scroll cards
     function loadSearchResults() {
         if (!query) {
             state.records = [];
@@ -585,6 +624,7 @@ window.addEventListener("load", () => {
         });
     }
 
+    // Loads top-level category groups and renders them as category cards
     function loadCategoryGroups() {
         if (typeof getData !== "function" || typeof categoryClusterURL !== "string") {
             loadSearchResults();
@@ -611,6 +651,7 @@ window.addEventListener("load", () => {
         });
     }
 
+    // Loads individual items within a selected category
     function loadCategoryItems() {
         if (!categoryId) {
             state.records = [];
@@ -644,6 +685,7 @@ window.addEventListener("load", () => {
         });
     }
 
+    // Wire test buttons to scroll up/down
     buttons.forEach((button) => {
         button.addEventListener("click", () => {
             const direction = Number(button.dataset.direction || "0");
@@ -653,6 +695,7 @@ window.addEventListener("load", () => {
         });
     });
 
+    // Expose scroll controls to voice-commands.js
     window.scrollPageController = {
         scroll(direction) {
             return scrollRecords(direction);
@@ -662,9 +705,11 @@ window.addEventListener("load", () => {
         }
     };
 
+    // Initial render and brief animation pass
     renderVisibleRows();
     animateInitialDraw(1400);
 
+    // Load data for the current mode
     if (mode === "categories") {
         loadCategoryGroups();
     } else if (mode === "category-items") {
@@ -673,6 +718,7 @@ window.addEventListener("load", () => {
         loadSearchResults();
     }
 
+    // Re-render or redraw when the layout changes (resize or mic animation end)
     function handleLayoutChange() {
         if (syncVisibleRows()) {
             renderVisibleRows();
@@ -686,6 +732,7 @@ window.addEventListener("load", () => {
     mic.addEventListener("animationend", handleLayoutChange);
     window.addEventListener("resize", handleLayoutChange);
 
+    // Use ResizeObserver for more reliable layout change detection
     if ("ResizeObserver" in window) {
         resizeObserver = new ResizeObserver(handleLayoutChange);
         resizeObserver.observe(scrollBox);
