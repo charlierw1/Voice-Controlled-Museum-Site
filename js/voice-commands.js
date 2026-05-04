@@ -214,7 +214,7 @@
     const arrows = document.querySelectorAll(".carousel .arrow");
     if (arrows.length >= 2) {
       const target = direction < 0 ? arrows[0] : arrows[arrows.length - 1];
-      if (target.getAttribute("aria-disabled") !== "true" && clickElement(target)) {
+      if (target.getAttribute("data-disabled") !== "true" && clickElement(target)) {
         speak(direction < 0 ? "Previous item." : "Next item.");
         return;
       }
@@ -297,9 +297,7 @@
 
     const overlay = document.createElement("div");
     overlay.className = "item-image-overlay";
-    overlay.setAttribute("role", "dialog");
-    overlay.setAttribute("aria-modal", "true");
-    overlay.setAttribute("aria-label", "Current item image");
+
 
     const panel = document.createElement("div");
     panel.className = "item-image-overlay-panel";
@@ -427,7 +425,7 @@
         const fullHref = anchor.href || "";
         if (!pattern.test(href) && !pattern.test(fullHref)) return null;
         const labelNode = anchor.querySelector("span, h2, figcaption");
-        const label = (labelNode?.textContent || anchor.getAttribute("aria-label") || anchor.textContent || "").trim();
+        const label = (labelNode?.textContent || anchor.textContent || "").trim();
         return { anchor, href: fullHref, label, normalizedTitle: normalize(label) };
       })
       .filter(Boolean);
@@ -510,12 +508,12 @@
     panels.forEach((panel, panelIndex) => {
       const side = (panel.dataset.column === "1" || panelIndex === 1) ? "right" : "left";
       const anchors = Array.from(panel.querySelectorAll(".scroll-panel-track > a.scroll-card-focus"))
-        .filter(anchor => anchor.getAttribute("aria-disabled") !== "true" && !!anchor.getAttribute("href"));
+        .filter(anchor => anchor.getAttribute("data-disabled") !== "true" && !!anchor.getAttribute("href"));
 
       anchors
         .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)
         .forEach((anchor) => {
-          const label = sanitize(anchor.querySelector("span")?.textContent || anchor.getAttribute("aria-label") || "");
+          const label = sanitize(anchor.querySelector("span")?.textContent || "");
           bySide[side].push({
             anchor,
             href: anchor.href || "",

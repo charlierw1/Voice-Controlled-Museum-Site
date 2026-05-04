@@ -186,8 +186,6 @@ function renderCarouselState(state) {
         const altLabel = isMainSlot
             ? `Main image for ${mainTitle}`
             : `Detail image ${imageIndex + 1} for ${mainTitle}`;
-        imageDiv.setAttribute("aria-label", altLabel);
-
         if (caption) {
             caption.textContent = "";
         }

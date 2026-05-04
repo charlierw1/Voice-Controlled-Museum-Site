@@ -68,12 +68,12 @@ function applyRecordToSlot(slot, record) {
     card.style.backgroundSize = "";
     card.style.backgroundPosition = "";
     card.style.backgroundRepeat = "";
-    slot.removeAttribute("aria-disabled");
+    slot.removeAttribute("data-disabled");
     slot.tabIndex = 0;
 
     if (!record?.systemNumber && !record?._customHref) {
         slot.removeAttribute("href");
-        slot.setAttribute("aria-disabled", "true");
+        slot.setAttribute("data-disabled", "true");
         slot.tabIndex = -1;
         card.classList.add("scroll-card-placeholder");
         label.textContent = record?._placeholderLabel || "No result";

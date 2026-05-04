@@ -280,8 +280,6 @@ async function loadBackgroundCreators(state, creatorDefinitions) {
 }
 
 function wireCollectionArrow(arrow, label, onActivate) {
-    arrow.setAttribute("role", "button");
-    arrow.setAttribute("aria-label", label);
     arrow.setAttribute("tabindex", "0");
     arrow.style.cursor = "pointer";
 
@@ -491,7 +489,7 @@ function renderCreatorCarousel(state) {
             card.style.backgroundPosition = "";
             card.style.backgroundRepeat = "";
             label.textContent = "Loading creator";
-            link.setAttribute("aria-disabled", "true");
+            link.setAttribute("data-disabled", "true");
             link.tabIndex = -1;
             link.href = "#";
             return;
@@ -499,10 +497,9 @@ function renderCreatorCarousel(state) {
 
         applyRecordToImageCard(card, creator.records[0]);
         label.textContent = creator.displayName;
-        link.removeAttribute("aria-disabled");
+        link.removeAttribute("data-disabled");
         link.tabIndex = 0;
         link.href = `#creator-${creator.id}`;
-        link.setAttribute("aria-label", `Show works by ${creator.displayName}`);
     });
 }
 
@@ -570,7 +567,7 @@ function renderCreatorPanel(state, creator) {
             card.style.backgroundRepeat = "";
             label.textContent = "No item available";
             link.href = "#";
-            link.setAttribute("aria-disabled", "true");
+            link.setAttribute("data-disabled", "true");
             link.tabIndex = -1;
             return;
         }
@@ -578,9 +575,8 @@ function renderCreatorPanel(state, creator) {
         applyRecordToImageCard(card, record);
         label.textContent = getRecordTitle(record);
         link.href = getItemPageUrl(record);
-        link.removeAttribute("aria-disabled");
+        link.removeAttribute("data-disabled");
         link.tabIndex = 0;
-        link.setAttribute("aria-label", `Open ${getRecordTitle(record)}`);
     });
 }
 
@@ -621,7 +617,7 @@ function updateCollectionArrows(state) {
 function setArrowDisabled(arrow, isDisabled) {
     arrow.style.opacity = isDisabled ? "0.35" : "1";
     arrow.style.pointerEvents = isDisabled ? "none" : "auto";
-    arrow.setAttribute("aria-disabled", String(isDisabled));
+    arrow.setAttribute("data-disabled", String(isDisabled));
 }
 
 function applyRecordToImageCard(card, record) {

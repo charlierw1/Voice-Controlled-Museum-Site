@@ -158,8 +158,6 @@ function syncCardSlots(state, requiredCount) {
 }
 
 function wireArrow(state, arrow, label, onActivate) {
-    arrow.setAttribute("role", "button");
-    arrow.setAttribute("aria-label", label);
     arrow.setAttribute("tabindex", "0");
     arrow.style.cursor = "pointer";
 
@@ -435,7 +433,7 @@ function moveCloneOffscreen(clone, direction, slotGap) {
 function updateArrowDisabledVisual(state, arrow, isDisabled) {
     arrow.style.opacity = isDisabled ? "0.35" : "1";
     arrow.style.pointerEvents = isDisabled ? "none" : "auto";
-    arrow.setAttribute("aria-disabled", String(isDisabled));
+    arrow.setAttribute("data-disabled", String(isDisabled));
 }
 
 function getBestImageUrl(record) {
