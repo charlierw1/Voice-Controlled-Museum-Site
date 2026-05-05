@@ -21,6 +21,7 @@
   // Each command's JSON config path.
   const COMMAND_DEFS = {
     home:                    ["directCommands", "navigation", "home"],
+    goBack:                  ["directCommands", "navigation", "goBack"],
     help:                    ["directCommands", "navigation", "help"],
     listCategories:          ["directCommands", "navigation", "listCategories"],
     openCollections:         ["directCommands", "navigation", "openCollections"],
@@ -872,6 +873,7 @@
 
   const HANDLERS = {
     home:                    () => { speak("Going to home page."); window.location.replace("/index.html"); },
+    goBack:                  () => { speak("Going back."); history.back(); },
     help:                    () => { speak("Opening help."); window.location.replace("/pages/help.html"); },
     listCategories:          () => {speak("Going to categories page."); openGeneralCategories()},
     openCollections:         () => { speak("Opening collections."); window.location.replace("/pages/collection.html"); },

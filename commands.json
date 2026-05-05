@@ -12,12 +12,18 @@
           "back to home",
           "back to home page",
           "return to home page",
-          "go back",
-          "back",
-          "previous page",
           "menu",
           "take me back to the menu",
           "please send me back to the home page"
+        ]
+      },
+      "goBack": {
+        "description": "Navigate back to the previous page in browser history.",
+        "commands": [
+          "go back",
+          "back",
+          "previous page",
+          "last page"
         ]
       },
       "listCategories": {
