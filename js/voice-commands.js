@@ -194,6 +194,10 @@
     speak(direction < 0 ? "Scrolling up." : "Scrolling down.");
     if (document.body.classList.contains("scroll-page") && window.scrollPageController?.scroll) {
       window.scrollPageController.scroll(direction);
+      // Scroll down moves two rows at a time; chain a second step after the animation
+      if (direction > 0) {
+        setTimeout(() => window.scrollPageController?.scroll(direction), 460);
+      }
       return;
     }
     const step = Math.max(180, Math.round(window.innerHeight * 0.7));
@@ -230,6 +234,10 @@
     const title = panel?.querySelector("h2")?.textContent?.trim();
     const desc = panel?.querySelector("p")?.textContent?.trim();
     if (title && desc) { speak(`Title: ${title}. Description: ${desc}`); return; }
+
+    const collectionTitle = document.querySelector(".collection-text h2")?.textContent?.trim();
+    const collectionDesc = document.querySelector(".collection-text p")?.textContent?.trim();
+    if (collectionTitle && collectionDesc) { speak(`${collectionTitle}. ${collectionDesc}`); return; }
 
     const bannerTitle = document.querySelector(".banner h2")?.textContent?.trim();
     const bannerDesc = document.querySelector(".banner span")?.textContent?.trim();
