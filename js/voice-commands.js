@@ -51,6 +51,26 @@
 
   let isSpeaking = false;
 
+  // In-site navigation history stored across page loads
+  const SITE_HISTORY_KEY = "siteNavHistory";
+
+  function getSiteHistory() {
+    try { return JSON.parse(sessionStorage.getItem(SITE_HISTORY_KEY) || "[]"); }
+    catch { return []; }
+  }
+
+  function saveSiteHistory(stack) {
+    sessionStorage.setItem(SITE_HISTORY_KEY, JSON.stringify(stack));
+  }
+
+  // Navigate to a URL while pushing the current page onto the in-site history stack
+  function navigateTo(url) {
+    const stack = getSiteHistory();
+    stack.push(window.location.href);
+    saveSiteHistory(stack);
+    window.location.replace(url);
+  }
+
   // Toggles the mic SVG between speaking and listening states
   function setSpeaking(active) {
     isSpeaking = active;
@@ -562,7 +582,7 @@
 
     const target = candidates[targetIndex];
     speak(`Opening ${target.label || "selected item"}.`);
-    window.location.replace(target.href);
+    navigateTo(target.href);
     return true;
   }
 
@@ -598,7 +618,7 @@
     const exact = candidates.filter(c => c.normalizedTitle === normalizedName);
     if (exact.length === 1 && exact[0].href) {
       speak(`Opening ${exact[0].label || name}`);
-      window.location.replace(exact[0].href);
+      navigateTo(exact[0].href);
       return;
     }
 
@@ -606,7 +626,7 @@
       const cleanup = renderChoiceOverlays(exact);
       startClarification({
         choices: exact,
-        onSelect: c => { speak(`Opening ${c.label}`); window.location.replace(c.href); },
+        onSelect: c => { speak(`Opening ${c.label}`); navigateTo(c.href); },
         prompt: `I found ${exact.length} items with that name. Say the number you want to open.`,
         cleanup
       });
@@ -617,7 +637,7 @@
       || candidates.find(c => c.normalizedTitle.includes(normalizedName));
     if (best?.href) {
       speak(`Opening ${best.label || name}`);
-      window.location.replace(best.href);
+      navigateTo(best.href);
     } else {
       speak(`I could not find ${name} on this page.`);
     }
@@ -661,9 +681,7 @@
       return;
     }
     speak(`Opening ${choice.title}`);
-    window.location.replace(
-      `/pages/item.html?id=${encodeURIComponent(choice.systemNumber)}&voiceExplain=1`
-    );
+    navigateTo(`/pages/item.html?id=${encodeURIComponent(choice.systemNumber)}&voiceExplain=1`);
   }
 
   // Fetches API results for a name and navigates directly or prompts for a choice
@@ -672,7 +690,7 @@
     if (!name) { speak("Please tell me which object you want to learn about."); return; }
 
     if (typeof getData !== "function" || typeof searchURL !== "string") {
-      window.location.replace("/pages/scroll.html?q=" + encodeURIComponent(name));
+      navigateTo("/pages/scroll.html?q=" + encodeURIComponent(name));
       return;
     }
 
@@ -696,13 +714,13 @@
     const name = sanitize(rawName);
     if (!name) { speak("Please say the creator whose collection you want to open."); return; }
     speak(`Opening collection for ${name}.`);
-    window.location.replace("/pages/collection.html?creator=" + encodeURIComponent(name));
+    navigateTo("/pages/collection.html?creator=" + encodeURIComponent(name));
   }
 
   // Navigates to the general categories scroll page
   function openGeneralCategories() {
     speak("Showing categories.");
-    window.location.replace("/pages/scroll.html?mode=categories");
+    navigateTo("/pages/scroll.html?mode=categories");
   }
 
   // Scores how well a record title matches the search target
@@ -727,7 +745,7 @@
     }
 
     if (typeof getData !== "function" || typeof searchURL !== "string") {
-      window.location.replace("/pages/scroll.html?q=" + encodeURIComponent(name));
+      navigateTo("/pages/scroll.html?q=" + encodeURIComponent(name));
       return;
     }
 
@@ -754,7 +772,7 @@
       }
 
       speak(`Opening ${getRecordTitle(bestRecord)}`);
-      window.location.replace(`/pages/item.html?id=${encodeURIComponent(bestRecord.systemNumber)}`);
+      navigateTo(`/pages/item.html?id=${encodeURIComponent(bestRecord.systemNumber)}`);
     } catch (error) {
       console.error("Failed to resolve goToPage request", error);
       speak("I could not find that item right now.");
@@ -796,7 +814,7 @@
         return;
       }
       speak(`Showing similar items for ${panelTitle}`);
-      window.location.replace("/pages/scroll.html?q=" + encodeURIComponent(panelTitle));
+      navigateTo("/pages/scroll.html?q=" + encodeURIComponent(panelTitle));
       return;
     }
 
@@ -811,7 +829,7 @@
       }
 
       speak(`Showing similar items to ${getRecordTitle(record || {})}`);
-      window.location.replace("/pages/scroll.html?q=" + encodeURIComponent(query));
+      navigateTo("/pages/scroll.html?q=" + encodeURIComponent(query));
     } catch (error) {
       console.error("Failed to build similar items query", error);
       speak("I could not load the current item details to find similar items.");
@@ -864,7 +882,7 @@
       return;
     }
     speak(`Searching for ${query}.`);
-    window.location.replace("/pages/scroll.html?q=" + encodeURIComponent(query));
+    navigateTo("/pages/scroll.html?q=" + encodeURIComponent(query));
   }
 
   /* -----------------------------------------------
@@ -872,11 +890,18 @@
      ----------------------------------------------- */
 
   const HANDLERS = {
-    home:                    () => { speak("Going to home page."); window.location.replace("/index.html"); },
-    goBack:                  () => { speak("Going back."); history.back(); },
-    help:                    () => { speak("Opening help."); window.location.replace("/pages/help.html"); },
+    home:                    () => { speak("Going to home page."); navigateTo("/index.html"); },
+    goBack:                  () => {
+      const stack = getSiteHistory();
+      if (stack.length === 0) { speak("There is no previous page to go back to."); return; }
+      const prev = stack.pop();
+      saveSiteHistory(stack);
+      speak("Going back.");
+      window.location.replace(prev);
+    },
+    help:                    () => { speak("Opening help."); navigateTo("/pages/help.html"); },
     listCategories:          () => {speak("Going to categories page."); openGeneralCategories()},
-    openCollections:         () => { speak("Opening collections."); window.location.replace("/pages/collection.html"); },
+    openCollections:         () => { speak("Opening collections."); navigateTo("/pages/collection.html"); },
     cancel:                  () => cancelCurrentAction(),
     carouselLeft:            () => moveCarousel(-1),
     carouselRight:           () => moveCarousel(1),
